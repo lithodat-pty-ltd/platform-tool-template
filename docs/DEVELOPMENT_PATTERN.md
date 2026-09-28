@@ -39,8 +39,8 @@ Every field is optional. A Bookmarks-style tool can ignore the map. An embedded 
 | --- | --- |
 | `getToken` | Returns a JWT for data access. Prefer this over a raw string so the host can refresh it. Same role as `getSwathProfileAccessToken`. |
 | `token` | A JWT the host already holds. Ignored when `getToken` is set. |
-| `apiBaseUrl` | EarthBank API origin. Omit it to use `https://app.ausgeochem.org`. |
-| `map` | The MapLibre / Mapbox instance (`mglMap`). Omit it, or pass `null`, when the tool does not draw on the map. |
+| `apiBaseUrl` | EarthBank API origin. Omit it and a published module uses the host's `axios.defaults.baseURL`, then the page origin. The dev server uses `https://testapp.ausgeochem.org` only when neither is set. |
+| `map` | The caller's Mapbox instance (`mglMap`), also available as `MapContext`. Omit it, or pass `null`, when the tool does not draw on the map. A Mapbox access token is not a module parameter. |
 | `onClose` | Tells the host to hide the tool. The module does not unmount itself. Omit it when the panel is docked and cannot be dismissed. |
 | `controlPanelPosition` | Host override of the module's default position. Numbers are pixels. `right` replaces a default `left`. |
 | `onControlPanelPositionChange` | Fired when the user finishes dragging the panel, so the host can store the new position. |
@@ -70,7 +70,7 @@ The token is a credential. Do not write it to the console, the DOM, or an error 
 
 `authorizedFetch` always sends `Authorization: Bearer`. Use it when the call cannot succeed without a JWT.
 
-`createPlatformApi` is the transport. It builds `https://app.ausgeochem.org` URLs unless the host passed `apiBaseUrl`. `platformFetch` attaches the bearer token when the host provided one, and calls without a header when it did not. Public EarthBank reads answer without a JWT. Private samples still need the host token. A failed response throws `PlatformApiError` with the HTTP status and the problem `detail`. The message stays short and never includes the JWT.
+`createPlatformApi` is the transport. It uses `apiBaseUrl` when the host passed one. Otherwise it uses `axios.defaults.baseURL`, which client001 sets from `SERVER_API_URL`. An empty axios base URL means the page origin, the same as axios. `https://testapp.ausgeochem.org` is only the fallback while running this repository's dev server. `platformFetch` attaches the bearer token when the host provided one, and calls without a header when it did not. Public EarthBank reads answer without a JWT. Private samples still need the host token. A failed response throws `PlatformApiError` with the HTTP status and the problem `detail`. The message stays short and never includes the JWT.
 
 `getJson` and `postJson` send one request. `listAll` repeats `page` and `size` until a short page comes back, and stops early when `X-Total-Count` says every row is already in hand. Long `*.in` lists are split into batches of 50 inside the named calls below.
 
@@ -145,6 +145,8 @@ Do not ask the host for a new prop per filter.
 
 The type on the contract is the small set of methods this template calls. The object the host passes is the real map. Extend the interface in your module for `addSource`, `addLayer`, and the rest, and keep that extension local.
 
+Read it with `useMapContext(props.map)`. In module mode the caller's `MapProvider` wins, and the `map` prop is the fallback when the caller did not set a provider. A Mapbox access token is ignored. The demo client (`src/sandbox`) is the only place that reads one: `VITE_MAPBOX_ACCESS_TOKEN`, the `mapboxAccessToken` prop on `SandboxHost`, or the field in the host column. That key builds a Mapbox map for local development. Leave it blank and the sandbox keeps the stand-in map. Do not pass the key into the published module.
+
 The sample tool calls `fitBounds` when the scope is a bounding box that does not cross the antimeridian. Delete that effect if your tool should not move the camera.
 
 Set `requiresMap` on the manifest when a missing map should be explained in the panel. Still render the panel.
@@ -205,25 +207,29 @@ Today the host still has a short explicit mount per tool, as in the Swath snippe
 
 The generalised form is `examples/host-mount.tsx`. The host holds a registration, not a copy of the tool:
 
+```bash
+npm install github:lithodat-pty-ltd/platform-tool-template
+```
+
 ```tsx
 import { FormattedFileDownload, toolManifest } from "platform-tool-template";
 
 const registration = { Component: FormattedFileDownload, manifest: toolManifest };
 
-<PlatformToolSlot
-  tool={registration}
-  open={isOpen("example-tool")}
-  graniteBrand={runtimeThemeTokens.graniteBrand}
-  surfaceMode={runtimeThemeTokens.surfaceMode}
-  map={mglMap}
+<FormattedFileDownload
   getToken={getAccessToken}
-  onClose={() => close("example-tool")}
+  onClose={closeTool}
+  controlPanelPosition={{ left: 50, top: 80 }}
+  theme={{ graniteBrand: "earthbank", surfaceMode: "light" }}
   licenses={userLicenses}
   searchSpec={currentSearch}
   ids={selectedIds}
   boundingBox={currentExtent}
+  map={mglMap}
 />
 ```
+
+`theme.graniteBrand` and `theme.surfaceMode` are the values client001 passes into Granite: `earthbank` and `light`. `controlPanelPosition` is the module default, `{ left: 50, top: 80 }`. The host can override it.
 
 `examples/registry.json` is the list of packages. The platform bundle cannot import an unknown package name out of thin air, so adding a module is still a dependency and one registration. That is the whole integration. Do not copy the tool's components into the platform repository.
 

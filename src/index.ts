@@ -24,6 +24,7 @@ export {
 export { EARTHBANK_ORIGIN, PlatformApiError, createPlatformApi, platformFetch } from "./platform/api";
 export { EARTHBANK_ID_CHUNK, createEarthBank } from "./platform/earthbank";
 export { useStylesheet } from "./platform/useStylesheet";
+export { MapContext, MapProvider, useMapContext } from "./platform/MapProvider";
 export {
   tokensForBrand,
   cssVariablesFrom,

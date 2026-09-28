@@ -28,6 +28,7 @@ export async function loadSampleTable(
   ids: readonly string[],
   api: PlatformApi,
   retrievedOn: Date = new Date(),
+  tableName?: string,
 ): Promise<SampleTableFile> {
   const invalid = ids.filter((id) => !/^\d+$/.test(id));
   const numeric = ids.filter((id) => /^\d+$/.test(id));
@@ -47,7 +48,7 @@ export async function loadSampleTable(
   const packages = await loadPackages(earthbank, found);
 
   const records = found.map((sample) => toRecord(sample, points, minerals, packages)).filter((record): record is SampleRecord => record != null);
-  const table = buildSampleTable(records, { retrievedOn, origin: api.origin });
+  const table = buildSampleTable(records, { retrievedOn, origin: api.origin, tableName });
   return {
     ...table,
     bytes: sampleTableToXlsx(table),

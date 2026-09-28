@@ -3,10 +3,12 @@ import type { PlatformToolProps } from "../contract";
 import { createPlatformApi } from "../platform/api";
 import { ControlPanel } from "../platform/ControlPanel";
 import { resolveDataScope } from "../platform/dataScope";
+import { useMapContext } from "../platform/MapProvider";
 import { useOverridablePosition } from "../platform/useOverridablePosition";
 import { tokenSourceOf } from "../platform/usePlatformToken";
 import { loadSampleTable } from "./loadSamples";
 import { toolManifest } from "./manifest";
+import { DEFAULT_TABLE_NAME } from "./sampleTable";
 import "./MyTool.css";
 
 /**
@@ -14,12 +16,14 @@ import "./MyTool.css";
  * The panel is a file icon. The click builds the workbook and saves it.
  */
 export function FormattedFileDownload(props: PlatformToolProps) {
+  const hostMap = useMapContext(props.map);
   const scope = resolveDataScope(props, toolManifest.accepts);
   const position = useOverridablePosition(
     toolManifest.defaultControlPanelPosition,
     props.controlPanelPosition,
     props.onControlPanelPositionChange,
   );
+  const [tableName, setTableName] = useState(DEFAULT_TABLE_NAME);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
@@ -35,7 +39,7 @@ export function FormattedFileDownload(props: PlatformToolProps) {
     setMessage(null);
     try {
       const api = createPlatformApi(tokenSourceOf(props), props.apiBaseUrl);
-      const file = await loadSampleTable(scope.ids, api);
+      const file = await loadSampleTable(scope.ids, api, new Date(), tableName);
       saveFile(file.bytes, file.filename);
       setFailed(file.missingIds.length > 0);
       setMessage(
@@ -61,7 +65,17 @@ export function FormattedFileDownload(props: PlatformToolProps) {
       onClose={props.onClose}
       theme={props.theme}
     >
-      <div className="formatted-download">
+      <div className="formatted-download" data-host-map={hostMap ? "caller" : "none"}>
+        <p className="formatted-download__watermark">demo - replace with your content</p>
+        <label className="formatted-download__name">
+          Table Name:
+          <input
+            type="text"
+            value={tableName}
+            onChange={(event) => setTableName(event.target.value)}
+            disabled={busy}
+          />
+        </label>
         <button
           type="button"
           className="formatted-download__file"

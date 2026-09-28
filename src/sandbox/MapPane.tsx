@@ -1,3 +1,4 @@
+import type { RefObject } from "react";
 import type { BoundingBox } from "../contract";
 
 export function MapPane({
@@ -7,6 +8,9 @@ export function MapPane({
   view,
   box,
   boxActive,
+  source,
+  mapError,
+  mapContainerRef,
 }: {
   connected: boolean;
   center: { lng: number; lat: number } | null;
@@ -14,27 +18,36 @@ export function MapPane({
   view: BoundingBox | null;
   box: BoundingBox | null;
   boxActive: boolean;
+  source: "mapbox" | "mock";
+  mapError: string | null;
+  mapContainerRef: RefObject<HTMLDivElement>;
 }) {
   const rect = box && view ? projectBox(box, view) : null;
+  const live = source === "mapbox";
   return (
     <div className="sandbox-map" aria-label="Sandbox map">
-      <div className="sandbox-map__grid" />
-      {rect ? (
+      {live ? <div ref={mapContainerRef} className="sandbox-map__canvas" /> : <div className="sandbox-map__grid" />}
+      {rect && !live ? (
         <div
           className={boxActive ? "sandbox-map__box" : "sandbox-map__box sandbox-map__box--unused"}
           style={{ left: rect.left, top: rect.top, width: rect.width, height: rect.height }}
         />
       ) : null}
-      <div className="sandbox-map__crosshair" aria-hidden="true" />
+      {live ? null : <div className="sandbox-map__crosshair" aria-hidden="true" />}
       <div className="sandbox-map__readout">
-        <p>Sandbox map</p>
-        <p>Stand-in for the host MapLibre map. The module receives it as `map`.</p>
+        <p>{live ? "Mapbox map" : "Sandbox map"}</p>
+        <p>
+          {live
+            ? "Opened with the development Mapbox key. The module does not receive the key."
+            : "Stand-in for the host Mapbox map. Add a Mapbox access token to open a real map."}
+        </p>
+        {mapError ? <p>{mapError}</p> : null}
         {center && zoom != null ? (
           <p>
             {center.lng.toFixed(4)}, {center.lat.toFixed(4)} · zoom {zoom.toFixed(1)}
           </p>
         ) : null}
-        <p>{connected ? "Passed to the module as map." : "Not passed. The module is mounted without a map."}</p>
+        <p>{connected ? "Passed to the module as the caller map context." : "Not passed. The module is mounted without a map."}</p>
         {box ? (
           <p>{boxActive ? "Bounding box is the data scope." : "Bounding box was sent, but it is not the scope in use."}</p>
         ) : null}

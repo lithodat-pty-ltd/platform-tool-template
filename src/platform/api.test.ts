@@ -1,5 +1,45 @@
+import axios from "axios";
 import { describe, expect, it, vi } from "vitest";
-import { PlatformApiError, createPlatformApi, platformFetch } from "./api";
+import { EARTHBANK_ORIGIN, PlatformApiError, createPlatformApi, platformFetch, resolveApiOrigin } from "./api";
+
+describe("resolveApiOrigin", () => {
+  it("uses an explicit origin before the host axios base URL", () => {
+    expect(
+      resolveApiOrigin("https://example.test/", {
+        dev: false,
+        axiosBaseURL: "https://testapp.ausgeochem.org",
+        pageOrigin: "https://app.ausgeochem.org",
+      }),
+    ).toBe("https://example.test");
+  });
+
+  it("uses the host axios base URL when the module is consumed", () => {
+    expect(
+      resolveApiOrigin(undefined, {
+        dev: false,
+        axiosBaseURL: "https://testapp.ausgeochem.org/",
+        pageOrigin: "http://localhost:9000",
+      }),
+    ).toBe("https://testapp.ausgeochem.org");
+  });
+
+  it("uses the page origin when axios has no base URL outside development", () => {
+    expect(resolveApiOrigin(undefined, { dev: false, axiosBaseURL: "", pageOrigin: "https://app.ausgeochem.org" })).toBe(
+      "https://app.ausgeochem.org",
+    );
+  });
+
+  it("uses testapp only in development when the host has not set an origin", () => {
+    expect(resolveApiOrigin(undefined, { dev: true, axiosBaseURL: "", pageOrigin: "http://localhost:5173" })).toBe(EARTHBANK_ORIGIN);
+    expect(
+      resolveApiOrigin(undefined, {
+        dev: true,
+        axiosBaseURL: "https://staging.example",
+        pageOrigin: "http://localhost:5173",
+      }),
+    ).toBe("https://staging.example");
+  });
+});
 
 describe("platformFetch", () => {
   it("calls without a bearer token when the host did not provide one", async () => {
@@ -87,6 +127,22 @@ describe("createPlatformApi", () => {
     expect(first.searchParams.get("page")).toBe("0");
     expect(first.searchParams.get("size")).toBe("2");
     expect(second.searchParams.get("page")).toBe("1");
+  });
+
+  it("calls the origin on the host axios when apiBaseUrl is omitted", async () => {
+    const previous = axios.defaults.baseURL;
+    axios.defaults.baseURL = "https://host-api.example/";
+    const fetchImpl = vi.fn(async (input: RequestInfo | URL) => {
+      void input;
+      return new Response(JSON.stringify([]), { status: 200 });
+    });
+    try {
+      const api = createPlatformApi(undefined, undefined, fetchImpl);
+      await api.getJson("/api/core/samples");
+      expect(String(fetchImpl.mock.calls[0]?.[0])).toBe("https://host-api.example/api/core/samples");
+    } finally {
+      axios.defaults.baseURL = previous;
+    }
   });
 
   it("stops on a short page when no total is sent", async () => {

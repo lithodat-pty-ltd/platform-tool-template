@@ -1,4 +1,4 @@
-import { TABLE_SUBTITLE, TABLE_TITLE, type SampleTable } from "./sampleTable";
+import { TABLE_SUBTITLE, type SampleTable } from "./sampleTable";
 
 /** Workbook bytes matching the column layout, fonts, and rules of the sample table. */
 export function sampleTableToXlsx(table: SampleTable): Uint8Array {
@@ -18,7 +18,7 @@ export function sampleTableToXlsx(table: SampleTable): Uint8Array {
 
 function sheetXml(table: SampleTable): string {
   const rows: string[] = [];
-  rows.push(rowXml(1, [textCell("A1", 1, TABLE_TITLE)]));
+  rows.push(rowXml(1, [textCell("A1", 1, table.title)]));
   rows.push(rowXml(2, [textCell("A2", 2, TABLE_SUBTITLE)]));
   rows.push(
     rowXml(4, [

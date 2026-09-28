@@ -27,7 +27,7 @@ export interface ControlPanelPosition {
 
 /**
  * Minimum map surface used by the template.
- * The host passes its MapLibre or Mapbox instance (`mglMap`). Extend this
+ * The host passes its Mapbox instance (`mglMap`). Extend this
  * interface in your module for any further methods you call.
  */
 export interface PlatformMap {
@@ -163,12 +163,19 @@ export interface PlatformToolProps {
   token?: string;
 
   /**
-   * EarthBank API origin, with no path. The module client uses
-   * `https://app.ausgeochem.org` when this is omitted.
+   * EarthBank API origin, with no path. Omit it and the module uses the host's
+   * `axios.defaults.baseURL` (client001 sets that from `SERVER_API_URL`), then
+   * the page origin. `https://testapp.ausgeochem.org` is used only in this
+   * repository's dev server when neither is set.
    */
   apiBaseUrl?: string;
 
-  /** Map instance. Omit it for a tool that does not draw on the map. `null` is treated as omitted. */
+  /**
+   * Map instance from the caller (`MapProvider` / `mglMap`). Omit it for a tool
+   * that does not draw on the map. `null` is treated as omitted. A Mapbox
+   * access token is not part of this contract. The demo client uses one only
+   * while developing, and the module ignores it.
+   */
   map?: PlatformMap | null;
 
   /**
