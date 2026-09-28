@@ -1,6 +1,6 @@
 {
   "name": "platform-tool-template",
-  "version": "0.1.0",
+  "version": "0.9.0",
   "private": true,
   "description": "Template for a platform tool. The module owns its interface and receives a fixed set of host parameters.",
   "type": "module",

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { BoundingBox, ControlPanelPosition, PlatformTheme, SearchSpec } from "../contract";
 import { normalizeBoundingBox, resolveDataScope } from "../platform/dataScope";
+import { EARTHBANK_ORIGIN } from "../platform/api";
 import { DEFAULT_GRANITE_BRAND, DEFAULT_GRANITE_MODE, GRANITE_BRANDS, GRANITE_MODES, type GraniteBrand, type GraniteMode } from "../platform/granite";
 import { FormattedFileDownload } from "../tool/MyTool";
 import { toolManifest } from "../tool/manifest";
@@ -17,9 +18,9 @@ const DEFAULT_SEARCH = `{
 }`;
 
 /**
- * Stands in for the platform. This file is not the module.
- * The floating panel is the sample-table download. Everything in the side column is the host
- * deciding which of the standard parameters to pass.
+ * Stands in for the EarthBank client. This file is not the module and is not published.
+ * The floating panel is the tool. The side column is every host parameter, so the tool can be
+ * tried here before it is registered in the client.
  */
 export function SandboxHost() {
   const mapRef = useRef<MockMap | null>(null);
@@ -32,9 +33,11 @@ export function SandboxHost() {
   const [passClose, setPassClose] = useState(true);
   const [passToken, setPassToken] = useState(true);
   const [failToken, setFailToken] = useState(false);
-  const [analysis, setAnalysis] = useState(true);
-  const [canExport, setCanExport] = useState(false);
+  const [heldLicenses, setHeldLicenses] = useState<Readonly<Record<string, boolean>>>(() =>
+    Object.fromEntries(toolManifest.licenses.map((license) => [license.id, true])),
+  );
   const [otherLicense, setOtherLicense] = useState(false);
+  const [apiBaseUrl, setApiBaseUrl] = useState("");
   const [sendSearch, setSendSearch] = useState(false);
   const [sendIds, setSendIds] = useState(true);
   const [sendBox, setSendBox] = useState(false);
@@ -71,12 +74,11 @@ export function SandboxHost() {
   }, [sendBox, west, south, east, north]);
 
   const licenses = useMemo(() => {
-    const list: string[] = [];
-    if (analysis) list.push("example.analysis");
-    if (canExport) list.push("example.export");
+    const list = toolManifest.licenses.map((license) => license.id).filter((id) => heldLicenses[id]);
     if (otherLicense) list.push("platform.bookmarks");
     return list;
-  }, [analysis, canExport, otherLicense]);
+  }, [heldLicenses, otherLicense]);
+  const apiOrigin = apiBaseUrl.trim();
 
   const controlPanelPosition = useMemo(() => readPosition(left, top), [left, top]);
   const theme = useMemo<PlatformTheme>(() => {
@@ -116,8 +118,9 @@ export function SandboxHost() {
           <p className="sandbox-host__kicker">Platform host</p>
           <h1>Tool sandbox</h1>
           <p>
-            The floating panel is the npm module. This column is the platform. Change the parameters, then edit{" "}
-            <code>src/tool/MyTool.tsx</code>. The file icon downloads a sample table for the ids below.
+            The floating panel is the npm module (<code>{toolManifest.displayName}</code>). This column is the EarthBank
+            client. Exercise the tool here, then register it with <code>examples/host-mount.tsx</code>. The sandbox is
+            not part of the published package.
           </p>
         </header>
 
@@ -129,7 +132,7 @@ export function SandboxHost() {
           </p>
           <label>
             <input type="checkbox" checked={sendSearch} onChange={(event) => setSendSearch(event.target.checked)} />
-            Search spec
+            Search spec{toolManifest.accepts.searchSpec ? "" : " (this module ignores it)"}
           </label>
           {sendSearch ? (
             <>
@@ -139,14 +142,14 @@ export function SandboxHost() {
           ) : null}
           <label>
             <input type="checkbox" checked={sendIds} onChange={(event) => setSendIds(event.target.checked)} />
-            List of ids
+            List of ids{toolManifest.accepts.ids ? "" : " (this module ignores it)"}
           </label>
           {sendIds ? (
             <textarea value={idsText} onChange={(event) => setIdsText(event.target.value)} rows={4} spellCheck={false} />
           ) : null}
           <label>
             <input type="checkbox" checked={sendBox} onChange={(event) => setSendBox(event.target.checked)} />
-            Bounding box
+            Bounding box{toolManifest.accepts.boundingBox ? "" : " (this module ignores it)"}
           </label>
           {sendBox ? (
             <>
@@ -172,6 +175,24 @@ export function SandboxHost() {
         </fieldset>
 
         <fieldset>
+          <legend>EarthBank API</legend>
+          <label className="sandbox-host__stack">
+            API origin
+            <input
+              value={apiBaseUrl}
+              onChange={(event) => setApiBaseUrl(event.target.value)}
+              placeholder={EARTHBANK_ORIGIN}
+              spellCheck={false}
+              autoComplete="off"
+            />
+          </label>
+          <p className="sandbox-host__hint">
+            Leave this blank to use {EARTHBANK_ORIGIN}, which is what the module does when the client omits{" "}
+            <code>apiBaseUrl</code>.
+          </p>
+        </fieldset>
+
+        <fieldset>
           <legend>Access and licenses</legend>
           <label>
             <input type="checkbox" checked={passToken} onChange={(event) => setPassToken(event.target.checked)} />
@@ -181,17 +202,25 @@ export function SandboxHost() {
             <input type="checkbox" checked={failToken} onChange={(event) => setFailToken(event.target.checked)} />
             Next token request fails
           </label>
-          <label>
-            <input type="checkbox" checked={analysis} onChange={(event) => setAnalysis(event.target.checked)} />
-            example.analysis
-          </label>
-          <label>
-            <input type="checkbox" checked={canExport} onChange={(event) => setCanExport(event.target.checked)} />
-            example.export
-          </label>
+          {toolManifest.licenses.length === 0 ? (
+            <p className="sandbox-host__hint">This module declares no license ids in its manifest.</p>
+          ) : (
+            toolManifest.licenses.map((license) => (
+              <label key={license.id}>
+                <input
+                  type="checkbox"
+                  checked={heldLicenses[license.id] === true}
+                  onChange={(event) =>
+                    setHeldLicenses((current) => ({ ...current, [license.id]: event.target.checked }))
+                  }
+                />
+                {license.id}
+              </label>
+            ))
+          )}
           <label>
             <input type="checkbox" checked={otherLicense} onChange={(event) => setOtherLicense(event.target.checked)} />
-            platform.bookmarks (unused by this module)
+            platform.bookmarks (not declared by this module)
           </label>
         </fieldset>
 
@@ -264,8 +293,24 @@ export function SandboxHost() {
             </select>
           </label>
           <p className="sandbox-host__hint">
-            Remount key {graniteBrand}:{surfaceMode}, the same pair Swath Profile uses.
+            Remount key {graniteBrand}:{surfaceMode}, the same pair the EarthBank client uses.
           </p>
+        </fieldset>
+
+        <fieldset>
+          <legend>Client registration</legend>
+          <p className="sandbox-host__hint">
+            Publish the module, then add one registration in the EarthBank client. The client passes the same
+            parameters this page is passing now.
+          </p>
+          <dl className="sandbox-host__facts">
+            <dt>Tool id</dt>
+            <dd>{toolManifest.id}</dd>
+            <dt>Map</dt>
+            <dd>{toolManifest.requiresMap ? "Required" : "Optional"}</dd>
+            <dt>API origin in use</dt>
+            <dd>{apiOrigin || `${EARTHBANK_ORIGIN} (default)`}</dd>
+          </dl>
         </fieldset>
 
         {!open ? (
@@ -289,6 +334,7 @@ export function SandboxHost() {
               setDraggedTo(`${String(leftEdge)}, ${String(topEdge)}`);
             }}
             licenses={licenses}
+            apiBaseUrl={apiOrigin || undefined}
             theme={theme}
             searchSpec={search.spec}
             ids={ids}

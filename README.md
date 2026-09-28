@@ -12,7 +12,7 @@ Lithoplates, Swath Profile, the gridding tool, Lithochem, Bookmarks, and AOI are
 2. Change `name` in `package.json`. Remove `"private": true` when you publish.
 3. Rename `MyTool`, and set `id`, `displayName`, `requiresMap`, `licenses`, `accepts`, and `defaultControlPanelPosition` in `src/tool/manifest.ts`.
 4. Replace the sample body in `src/tool/MyTool.tsx`. Keep the props. Use `ControlPanel`, `usePlatformToken`, `resolveDataScope`, `createPlatformApi`, and `hasLicense` rather than reimplementing them.
-5. Run `npm run dev` and drive the sandbox through each parameter.
+5. Run `npm run dev`. The page is a stand-in for the EarthBank client. Drive every parameter, including the API origin, before you publish.
 6. Run `npm test`, `npm run typecheck`, and `npm run build`.
 7. On the platform, add the package and a registration entry (`examples/host-mount.tsx`). Do not copy the tool UI into the platform repository.
 
@@ -71,7 +71,7 @@ npm install
 npm run dev
 ```
 
-The page that opens is a stand-in for the platform. The floating panel is the module (`src/tool/MyTool.tsx`). The side column is the host, and it can pass or withhold each parameter.
+The page that opens is the host harness. The floating panel is the module (`src/tool/MyTool.tsx`). The side column passes the same parameters the EarthBank client will pass: data scope, token, licenses from the manifest, map, position, Granite brand, and API origin. Use it to prove the tool before you add the package to the client. `src/sandbox` is excluded from the published build.
 
 ```bash
 npm test

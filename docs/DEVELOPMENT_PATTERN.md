@@ -29,7 +29,7 @@ This repository is the starting point for that module. Clone it, rename it, and 
 | `src/tool/MyTool.css` | |
 | `src/tool/manifest.ts` | |
 
-`src/sandbox/**` is a fake host so you can develop without the platform. Extend it if you need to simulate a parameter. Do not ship sandbox behaviour inside the tool.
+`src/sandbox/**` is the host harness. It mounts the module the way the EarthBank client will, and it can pass or withhold each parameter, including `apiBaseUrl`. Run it before you publish and before you add the registration to the client. Extend it if you need to simulate a parameter. Do not ship sandbox behaviour inside the tool. The library build excludes this folder.
 
 ## What the host passes
 
@@ -236,7 +236,7 @@ npm install
 npm run dev
 ```
 
-The sandbox is the host. Tick the licenses, turn the map and close on and off, send a search, an id list, a bounding box, or more than one, and switch between Granite presets and the sample stylesheet in `public/sample-theme.css`.
+The sandbox is the EarthBank client. Tick the licenses declared on the manifest, turn the map and close on and off, send a search, an id list, a bounding box, or more than one, point the API origin at production or leave it blank, and switch between Granite brands and the sample stylesheet in `public/sample-theme.css`. When that behaves, register the module in the client. Do not copy the panel into the client repository.
 
 ```bash
 npm test
