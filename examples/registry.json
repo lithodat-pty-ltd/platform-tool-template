@@ -1,0 +1,10 @@
+{
+  "tools": [
+    {
+      "id": "example-tool",
+      "package": "your-package-name",
+      "export": "MyTool",
+      "manifestExport": "toolManifest"
+    }
+  ]
+}

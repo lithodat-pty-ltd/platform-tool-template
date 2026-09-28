@@ -1,0 +1,81 @@
+.my-tool__section + .my-tool__section {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--pt-border);
+}
+
+.my-tool__label {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--pt-muted);
+}
+
+.my-tool__p,
+.my-tool__note,
+.my-tool__error {
+  margin: 0;
+}
+
+.my-tool__note {
+  margin-top: 6px;
+  color: var(--pt-muted);
+}
+
+.my-tool__error {
+  color: var(--pt-danger);
+}
+
+.my-tool__pre,
+.my-tool__ids {
+  margin: 8px 0 0;
+  padding: 8px;
+  background: var(--pt-bg);
+  border-radius: 6px;
+  font-family: ui-monospace, "Cascadia Code", "Segoe UI Mono", monospace;
+  font-size: 12px;
+}
+
+.my-tool__pre {
+  overflow: auto;
+  max-height: 140px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.my-tool__ids {
+  list-style: none;
+}
+
+.my-tool__ids li + li {
+  margin-top: 2px;
+}
+
+.my-tool__box {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 12px;
+  margin: 8px 0 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.my-tool__box dt {
+  color: var(--pt-muted);
+}
+
+.my-tool__box dd {
+  margin: 0;
+}
+
+.my-tool__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.my-tool__status {
+  margin: 8px 0 0;
+}

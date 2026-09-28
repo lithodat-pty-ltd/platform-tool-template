@@ -1,0 +1,249 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+  color: #2a2622;
+  background: #e7e1d6;
+}
+
+.sandbox {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  min-height: 100vh;
+}
+
+.sandbox-map {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  background: #c9d3bc;
+}
+
+.sandbox-map__grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(90, 104, 78, 0.18) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(90, 104, 78, 0.18) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+.sandbox-map__crosshair {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  transform: translate(-50%, -50%);
+  border: 1px solid #2c3a28;
+  border-radius: 50%;
+}
+
+.sandbox-map__crosshair::before,
+.sandbox-map__crosshair::after {
+  content: "";
+  position: absolute;
+  background: #2c3a28;
+}
+
+.sandbox-map__crosshair::before {
+  left: 8px;
+  top: -6px;
+  width: 1px;
+  height: 30px;
+}
+
+.sandbox-map__crosshair::after {
+  top: 8px;
+  left: -6px;
+  height: 1px;
+  width: 30px;
+}
+
+.sandbox-map__box {
+  position: absolute;
+  box-sizing: border-box;
+  border: 2px solid #6e4b3a;
+  background: rgba(110, 75, 58, 0.18);
+}
+
+.sandbox-map__box--unused {
+  border-style: dashed;
+  background: transparent;
+}
+
+.sandbox-map__readout {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  max-width: 420px;
+  padding: 10px 12px;
+  background: rgba(247, 244, 238, 0.92);
+  border: 1px solid #cfc6b8;
+}
+
+.sandbox-map__readout p {
+  margin: 0;
+}
+
+.sandbox-map__readout p + p {
+  margin-top: 4px;
+}
+
+.sandbox-host {
+  position: relative;
+  z-index: 30;
+  padding: 20px 18px 32px;
+  background: #f7f4ee;
+  border-left: 1px solid #d9d2c5;
+  overflow: auto;
+  max-height: 100vh;
+}
+
+.sandbox-host__kicker {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #6b645c;
+}
+
+.sandbox-host h1 {
+  margin: 4px 0 8px;
+  font-size: 22px;
+  font-weight: 650;
+}
+
+.sandbox-host__intro p:last-child,
+.sandbox-host__hint {
+  margin: 0;
+  color: #5c564e;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.sandbox-host fieldset {
+  margin: 16px 0 0;
+  padding: 12px;
+  border: 1px solid #e0d8cc;
+  border-radius: 8px;
+}
+
+.sandbox-host legend {
+  padding: 0 4px;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.sandbox-host label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+.sandbox-host label.sandbox-host__stack {
+  display: block;
+}
+
+.sandbox-host select,
+.sandbox-host textarea,
+.sandbox-host input[type="text"],
+.sandbox-host input:not([type="checkbox"]):not([type="radio"]) {
+  width: 100%;
+  margin-top: 4px;
+  padding: 6px 8px;
+  font: inherit;
+  color: inherit;
+  background: #fffdfb;
+  border: 1px solid #d9d2c5;
+  border-radius: 6px;
+}
+
+.sandbox-host textarea {
+  font-family: ui-monospace, "Cascadia Code", monospace;
+  font-size: 12px;
+}
+
+.sandbox-host button {
+  margin-top: 8px;
+  font: inherit;
+  padding: 4px 8px;
+  background: #fffdfb;
+  border: 1px solid #d9d2c5;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.sandbox-host button:hover,
+.sandbox-host input:focus-visible,
+.sandbox-host select:focus-visible,
+.sandbox-host textarea:focus-visible {
+  outline: 2px solid #6e4b3a;
+  outline-offset: 1px;
+}
+
+.sandbox-host__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.sandbox-host__grid label {
+  display: block;
+}
+
+.sandbox-host__error {
+  margin: 6px 0 0;
+  color: #8f2d2d;
+  font-size: 13px;
+}
+
+.sandbox-host code {
+  font-family: ui-monospace, "Cascadia Code", monospace;
+  font-size: 12px;
+}
+
+.sandbox-crash {
+  position: fixed;
+  left: 50px;
+  top: 80px;
+  z-index: 30;
+  width: min(360px, calc(100vw - 24px));
+  padding: 16px;
+  background: #fffdfb;
+  border: 1px solid #e4dcd2;
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(28, 25, 21, 0.16);
+}
+
+.sandbox-crash p {
+  margin: 0 0 8px;
+}
+
+@media (max-width: 860px) {
+  .sandbox {
+    grid-template-columns: 1fr;
+  }
+
+  .sandbox-map {
+    min-height: 70vh;
+  }
+
+  .sandbox-host {
+    max-height: none;
+    border-left: 0;
+    border-top: 1px solid #d9d2c5;
+  }
+}

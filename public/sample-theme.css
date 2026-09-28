@@ -1,0 +1,31 @@
+/*
+ * Sample host stylesheet.
+ * This stands in for a CSS reference passed as theme.stylesheetHref.
+ * Target .platform-tool together with your class so these variables win
+ * over the module defaults. Layout (panel, header, type size) stays in the module.
+ */
+
+.platform-tool.sample-host-theme {
+  --pt-font: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+  --pt-bg: #e7f3ee;
+  --pt-fg: #14241e;
+  --pt-muted: #3e6256;
+  --pt-panel: #f4faf7;
+  --pt-border: #b7d4c8;
+  --pt-accent: #0f6e56;
+  --pt-accent-fg: #f4faf7;
+  --pt-danger: #8b2e2e;
+  --pt-shadow: 0 12px 32px rgba(15, 60, 45, 0.16);
+}
+
+.platform-tool.sample-host-theme[data-surface-mode="dark" i] {
+  --pt-bg: #10211c;
+  --pt-fg: #e7f2ec;
+  --pt-muted: #b7d0c6;
+  --pt-panel: #173028;
+  --pt-border: #245043;
+  --pt-accent: #7dcea0;
+  --pt-accent-fg: #10211c;
+  --pt-danger: #f0b4b4;
+  --pt-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
