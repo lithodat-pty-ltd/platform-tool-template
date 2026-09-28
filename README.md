@@ -1,6 +1,6 @@
 # Platform tool template
 
-Clone this repository to build a platform tool as an npm module. The module draws its own interface. The platform passes a fixed set of parameters and does not contain the tool's UI.
+Template for developing tools for EarthBank. Clone this repository to build a platform tool as an npm module. The module draws its own interface. The platform passes a fixed set of parameters and does not contain the tool's UI.
 
 The pattern is the Swath Profile mount: `map`, `getToken`, `onClose`, and `controlPanelPosition`. This template keeps that mount and adds the rest of the parameters every tool should be ready to receive: licenses, a Granite theme or a CSS reference, and the data to open — a search spec, a list of ids, or a bounding box.
 
