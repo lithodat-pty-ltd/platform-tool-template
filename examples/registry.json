@@ -1,9 +1,9 @@
 {
   "tools": [
     {
-      "id": "example-tool",
-      "package": "your-package-name",
-      "export": "MyTool",
+      "id": "formatted-file-download",
+      "package": "platform-tool-template",
+      "export": "FormattedFileDownload",
       "manifestExport": "toolManifest"
     }
   ]

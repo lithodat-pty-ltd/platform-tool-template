@@ -160,6 +160,12 @@ export interface PlatformToolProps {
   /** A JWT the host already holds. Ignored when `getToken` is set. */
   token?: string;
 
+  /**
+   * EarthBank API origin, with no path. The module client uses
+   * `https://app.ausgeochem.org` when this is omitted.
+   */
+  apiBaseUrl?: string;
+
   /** Map instance. Omit it for a tool that does not draw on the map. `null` is treated as omitted. */
   map?: PlatformMap | null;
 

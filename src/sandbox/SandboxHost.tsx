@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { BoundingBox, ControlPanelPosition, PlatformTheme, SearchSpec } from "../contract";
 import { normalizeBoundingBox, resolveDataScope } from "../platform/dataScope";
 import { GRANITE_BRANDS } from "../platform/granite";
-import { MyTool } from "../tool/MyTool";
+import { FormattedFileDownload } from "../tool/MyTool";
 import { toolManifest } from "../tool/manifest";
 import { makeDemoJwt } from "./demoToken";
 import { MapPane } from "./MapPane";
@@ -18,7 +18,7 @@ const DEFAULT_SEARCH = `{
 
 /**
  * Stands in for the platform. This file is not the module.
- * The floating panel is `MyTool`. Everything in the side column is the host
+ * The floating panel is the sample-table download. Everything in the side column is the host
  * deciding which of the standard parameters to pass.
  */
 export function SandboxHost() {
@@ -35,11 +35,11 @@ export function SandboxHost() {
   const [analysis, setAnalysis] = useState(true);
   const [canExport, setCanExport] = useState(false);
   const [otherLicense, setOtherLicense] = useState(false);
-  const [sendSearch, setSendSearch] = useState(true);
-  const [sendIds, setSendIds] = useState(false);
+  const [sendSearch, setSendSearch] = useState(false);
+  const [sendIds, setSendIds] = useState(true);
   const [sendBox, setSendBox] = useState(false);
   const [searchText, setSearchText] = useState(DEFAULT_SEARCH);
-  const [idsText, setIdsText] = useState("SMP-1042\nSMP-1048\nSMP-1101");
+  const [idsText, setIdsText] = useState(SAMPLE_IDS);
   const [west, setWest] = useState("115.5");
   const [south, setSouth] = useState("-32.2");
   const [east, setEast] = useState("121.8");
@@ -117,7 +117,7 @@ export function SandboxHost() {
           <h1>Tool sandbox</h1>
           <p>
             The floating panel is the npm module. This column is the platform. Change the parameters, then edit{" "}
-            <code>src/tool/MyTool.tsx</code>.
+            <code>src/tool/MyTool.tsx</code>. The file icon downloads a sample table for the ids below.
           </p>
         </header>
 
@@ -262,7 +262,7 @@ export function SandboxHost() {
 
       {open ? (
         <ToolErrorBoundary key={`${graniteBrand}:${surfaceMode}:${themeMode}`}>
-          <MyTool
+          <FormattedFileDownload
             key={`${graniteBrand}:${surfaceMode}:${themeMode}`}
             map={passMap ? map : undefined}
             getToken={passToken ? getToken : undefined}
@@ -309,6 +309,11 @@ function readNumber(value: string): number | undefined {
   const number = Number(value);
   return Number.isFinite(number) ? number : undefined;
 }
+
+const SAMPLE_IDS = [
+  1216651, 1216652, 1216653, 1216654, 1216655, 1216656, 1216657, 1216658, 1216659, 1216660, 1216661, 1216662,
+  1216663, 1216664, 1216665, 1216666, 1216667, 1216668, 1216669, 1216670, 1216671, 1216672, 1216673, 1216674,
+].join("\n");
 
 function parseIds(text: string): string[] {
   return text

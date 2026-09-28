@@ -1,4 +1,4 @@
-export { MyTool, MyTool as default } from "./tool/MyTool";
+export { FormattedFileDownload, FormattedFileDownload as default } from "./tool/MyTool";
 export { toolManifest } from "./tool/manifest";
 
 export { ControlPanel } from "./platform/ControlPanel";
@@ -21,6 +21,8 @@ export {
   tokenSourceOf,
   authorizedFetch,
 } from "./platform/usePlatformToken";
+export { EARTHBANK_ORIGIN, PlatformApiError, createPlatformApi, platformFetch } from "./platform/api";
+export { EARTHBANK_ID_CHUNK, createEarthBank } from "./platform/earthbank";
 export { useStylesheet } from "./platform/useStylesheet";
 export {
   tokensForBrand,
@@ -49,3 +51,16 @@ export type {
 
 export type { ResolvedDataScope, ScopeName, DataScopeInput } from "./platform/dataScope";
 export type { TokenSource, TokenStatus } from "./platform/usePlatformToken";
+export type { ListAllOptions, PlatformApi, Query, QueryValue } from "./platform/api";
+export type {
+  DataPackageResponse,
+  EarthBankClient,
+  EarthBankDataPackage,
+  EarthBankDataPoint,
+  EarthBankLiterature,
+  EarthBankLocation,
+  EarthBankPerson,
+  EarthBankSample,
+  HydratedSample,
+  SampleWithLocation,
+} from "./platform/earthbank";

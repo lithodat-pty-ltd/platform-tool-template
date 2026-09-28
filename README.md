@@ -11,7 +11,7 @@ Lithoplates, Swath Profile, the gridding tool, Lithochem, Bookmarks, and AOI are
 1. Clone this repository. This package is a template, not a library to depend on.
 2. Change `name` in `package.json`. Remove `"private": true` when you publish.
 3. Rename `MyTool`, and set `id`, `displayName`, `requiresMap`, `licenses`, `accepts`, and `defaultControlPanelPosition` in `src/tool/manifest.ts`.
-4. Replace the sample body in `src/tool/MyTool.tsx`. Keep the props. Use `ControlPanel`, `usePlatformToken`, `resolveDataScope`, and `hasLicense` rather than reimplementing them.
+4. Replace the sample body in `src/tool/MyTool.tsx`. Keep the props. Use `ControlPanel`, `usePlatformToken`, `resolveDataScope`, `createPlatformApi`, and `hasLicense` rather than reimplementing them.
 5. Run `npm run dev` and drive the sandbox through each parameter.
 6. Run `npm test`, `npm run typecheck`, and `npm run build`.
 7. On the platform, add the package and a registration entry (`examples/host-mount.tsx`). Do not copy the tool UI into the platform repository.
@@ -24,6 +24,7 @@ All of them are optional. Omit what the tool does not need. Do not throw when on
 | --- | --- |
 | `getToken` | Function that returns a JWT. The host can refresh it. Same role as `getSwathProfileAccessToken`. |
 | `token` | A JWT string, used only when `getToken` is not passed. |
+| `apiBaseUrl` | EarthBank API origin. The module client uses `https://app.ausgeochem.org` when this is omitted. |
 | `map` | MapLibre / Mapbox map. Optional. `null` means no map. |
 | `onClose` | Asks the host to hide the tool. Optional. The module does not unmount itself. |
 | `controlPanelPosition` | Override of the module default `{ left: 50, top: 80 }`. Numbers are pixels. |
@@ -38,7 +39,7 @@ Send one data scope. If more than one arrives, ids win, then the search spec, th
 
 ```jsx
 {open && (
-  <MyTool
+  <FormattedFileDownload
     key={`${graniteBrand}:${surfaceMode}`}
     map={mglMap}
     getToken={getAccessToken}
@@ -85,7 +86,7 @@ The sandbox JWT is unsigned and never leaves the browser. Do not log a real acce
 The build emits an ES module and injects the panel CSS on import. `react` and `react-dom` are peer dependencies. Import the component:
 
 ```ts
-import { MyTool, toolManifest } from "your-package-name";
+import { FormattedFileDownload, toolManifest } from "platform-tool-template";
 ```
 
 Registration on the host is `examples/host-mount.tsx` and `examples/registry.json`.

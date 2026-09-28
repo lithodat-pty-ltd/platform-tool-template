@@ -39,6 +39,7 @@ Every field is optional. A Bookmarks-style tool can ignore the map. An embedded 
 | --- | --- |
 | `getToken` | Returns a JWT for data access. Prefer this over a raw string so the host can refresh it. Same role as `getSwathProfileAccessToken`. |
 | `token` | A JWT the host already holds. Ignored when `getToken` is set. |
+| `apiBaseUrl` | EarthBank API origin. Omit it to use `https://app.ausgeochem.org`. |
 | `map` | The MapLibre / Mapbox instance (`mglMap`). Omit it, or pass `null`, when the tool does not draw on the map. |
 | `onClose` | Tells the host to hide the tool. The module does not unmount itself. Omit it when the panel is docked and cannot be dismissed. |
 | `controlPanelPosition` | Host override of the module's default position. Numbers are pixels. `right` replaces a default `left`. |
@@ -64,6 +65,39 @@ The module also applies `theme` when the props change. The key still matters: a 
 Call `getAccessToken()` from `usePlatformToken` at the moment you make a request. `authorizedFetch` sets `Authorization: Bearer <jwt>` and does not replace a header you already set.
 
 The token is a credential. Do not write it to the console, the DOM, or an error message. The sandbox JWT is unsigned and local. A real module sends the platform JWT only to the platform API.
+
+## Calling the API
+
+`authorizedFetch` always sends `Authorization: Bearer`. Use it when the call cannot succeed without a JWT.
+
+`createPlatformApi` is the transport. It builds `https://app.ausgeochem.org` URLs unless the host passed `apiBaseUrl`. `platformFetch` attaches the bearer token when the host provided one, and calls without a header when it did not. Public EarthBank reads answer without a JWT. Private samples still need the host token. A failed response throws `PlatformApiError` with the HTTP status and the problem `detail`. The message stays short and never includes the JWT.
+
+`getJson` and `postJson` send one request. `listAll` repeats `page` and `size` until a short page comes back, and stops early when `X-Total-Count` says every row is already in hand. Long `*.in` lists are split into batches of 50 inside the named calls below.
+
+`createEarthBank` is the set of calls every tool should start from. Pass the caller's JHipster query through; do not invent a second filter language.
+
+```ts
+const api = createPlatformApi(tokenSourceOf(props), props.apiBaseUrl);
+const earthbank = createEarthBank(api);
+
+const hydrated = await earthbank.hydrateSamplesById(scope.ids);
+const matches = await earthbank.listSamples({ "dataPackageId.equals": packageId, "name.contains": text });
+const inView = await earthbank.findSamplesInBounds(scope.boundingBox);
+const points = await earthbank.listDataPointsBySampleIds(sampleIds);
+const pkg = await earthbank.getDataPackage(packageId);
+```
+
+| Call | Request |
+| --- | --- |
+| `hydrateSamplesById` | `GET /api/core/hydrate-samples-by-id?sampleIds=` as one comma-separated value. One missing id fails the whole batch. This method throws that error. A tool that should keep the rest splits the list and retries. |
+| `listSamples` | `GET /api/core/sample-with-locations` with the caller's query (`field.equals`, `field.in`, `field.contains`), followed across pages. |
+| `findSamplesInBounds` | The same sample list, filtered with `locationCriteria.lat` and `locationCriteria.lon` greater-or-equal and less-or-equal bounds. West may be greater than east; those values are sent as given and are not split at the antimeridian. `POST /api/core/sample-with-locations/findGeoSquare/post` returns a `GeoSquare` extent, so it is not used to list samples. |
+| `listDataPointsBySampleIds` | `GET /api/core/data-points?sampleId.in=`, paged. `dataStructure` says which technique the row is. The matching `*DataPointId` (`ftdataPointId`, `upbDataPointId`, `gcdataPointId`, and the rest) points at that technique's record. |
+| `getDataPackage` | `GET /api/management/data-packages/{id}`. Name, distribution, and workflow state live on `dataPackageDTO`. |
+
+Technique groups stay in the tool that needs them. Fission track, U-Pb, geochemistry, and the rest are not part of this client. Call them with `api.getJson` or `api.listAll` on that technique's path, for example `GET /api/fissiontrack/FTDataPoint?id.in=`.
+
+Do not invent a second HTTP helper inside a tool. If a core call is missing, add it on `createEarthBank`. If a verb or a body is missing, add it on `createPlatformApi`.
 
 The hook refreshes about a minute before `exp` when `getToken` is provided. It does not poll. If the host passed a static `token` string, it cannot be refreshed.
 
@@ -172,9 +206,9 @@ Today the host still has a short explicit mount per tool, as in the Swath snippe
 The generalised form is `examples/host-mount.tsx`. The host holds a registration, not a copy of the tool:
 
 ```tsx
-import { MyTool, toolManifest } from "your-package-name";
+import { FormattedFileDownload, toolManifest } from "platform-tool-template";
 
-const registration = { Component: MyTool, manifest: toolManifest };
+const registration = { Component: FormattedFileDownload, manifest: toolManifest };
 
 <PlatformToolSlot
   tool={registration}
