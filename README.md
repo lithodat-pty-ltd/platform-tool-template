@@ -24,7 +24,7 @@ All of them are optional. Omit what the tool does not need. Do not throw when on
 | --- | --- |
 | `getToken` | Function that returns a JWT. The host can refresh it. Same role as `getSwathProfileAccessToken`. |
 | `token` | A JWT string, used only when `getToken` is not passed. |
-| `apiBaseUrl` | EarthBank API origin. The module client uses `https://app.ausgeochem.org` when this is omitted. |
+| `apiBaseUrl` | EarthBank API origin. Omit it and the module uses the host's `axios.defaults.baseURL`, then the page origin. The dev server uses `https://testapp.ausgeochem.org` only when neither is set. |
 | `map` | The caller's Mapbox map (`MapProvider` or `mglMap`). Optional. `null` means no map. The module does not take a Mapbox access token. |
 | `onClose` | Asks the host to hide the tool. Optional. The module does not unmount itself. |
 | `controlPanelPosition` | Override of the module default `{ left: 50, top: 80 }`. Numbers are pixels. |

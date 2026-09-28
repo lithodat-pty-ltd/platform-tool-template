@@ -1,7 +1,11 @@
+import axios from "axios";
 import { authorizedFetch, type TokenSource } from "./usePlatformToken";
 
-/** Production EarthBank origin. No path. */
-export const EARTHBANK_ORIGIN = "https://app.ausgeochem.org";
+/**
+ * API origin for `npm run dev` only. A published module does not use this.
+ * It uses `apiBaseUrl`, then the host's `axios.defaults.baseURL`, then the page origin.
+ */
+export const EARTHBANK_ORIGIN = "https://testapp.ausgeochem.org";
 
 /** Pages read in one `listAll` call before it stops, so a full page every time cannot loop forever. */
 const MAX_PAGES = 500;
@@ -53,11 +57,41 @@ export async function platformFetch(
 }
 
 /**
- * JSON client for the EarthBank API.
- * `baseUrl` defaults to {@link EARTHBANK_ORIGIN}. Pass `props.apiBaseUrl` from the host.
+ * Origin the module should call.
+ * An explicit `apiBaseUrl` wins. Otherwise the host's axios base URL wins.
+ * `https://testapp.ausgeochem.org` is used only in development when neither is set.
+ * A published module with an empty axios base URL uses the page origin, which is
+ * what axios does when `SERVER_API_URL` is empty.
  */
-export function createPlatformApi(source: TokenSource, baseUrl: string = EARTHBANK_ORIGIN, fetchImpl: typeof fetch = fetch): PlatformApi {
-  const origin = (baseUrl.trim() || EARTHBANK_ORIGIN).replace(/\/+$/, "");
+export function resolveApiOrigin(
+  explicit: string | undefined,
+  options: { dev: boolean; axiosBaseURL?: string | null; pageOrigin?: string | null },
+): string {
+  const passed = explicit?.trim().replace(/\/+$/, "");
+  if (passed) return passed;
+
+  const fromAxios = originFromAxiosBase(options.axiosBaseURL);
+  if (fromAxios) return fromAxios;
+
+  if (options.dev) return EARTHBANK_ORIGIN;
+
+  const page = options.pageOrigin?.trim().replace(/\/+$/, "");
+  if (page) return page;
+
+  throw new PlatformApiError(0, "No API origin. Pass apiBaseUrl or set axios.defaults.baseURL.");
+}
+
+/**
+ * JSON client for the EarthBank API.
+ * Pass `props.apiBaseUrl` when the host has an origin of its own.
+ * Otherwise this reads `axios.defaults.baseURL`, which client001 sets from `SERVER_API_URL`.
+ */
+export function createPlatformApi(source: TokenSource, baseUrl?: string, fetchImpl: typeof fetch = fetch): PlatformApi {
+  const origin = resolveApiOrigin(baseUrl, {
+    dev: import.meta.env.DEV,
+    axiosBaseURL: axios.defaults.baseURL,
+    pageOrigin: typeof location === "undefined" ? null : location.origin,
+  });
 
   async function request<T>(path: string, method: "GET" | "POST", query: Query | undefined, body?: unknown): Promise<{ data: T; response: Response }> {
     const url = new URL(path, `${origin}/`);
@@ -96,6 +130,13 @@ export function createPlatformApi(source: TokenSource, baseUrl: string = EARTHBA
       throw new PlatformApiError(0, "Paged list did not end.");
     },
   };
+}
+
+function originFromAxiosBase(baseURL: string | null | undefined): string | null {
+  if (baseURL == null) return null;
+  const trimmed = baseURL.trim();
+  if (!trimmed || !/^https?:\/\//i.test(trimmed)) return null;
+  return new URL(trimmed).origin;
 }
 
 function appendQuery(url: URL, query: Query | undefined): void {

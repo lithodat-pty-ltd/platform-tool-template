@@ -163,8 +163,10 @@ export interface PlatformToolProps {
   token?: string;
 
   /**
-   * EarthBank API origin, with no path. The module client uses
-   * `https://app.ausgeochem.org` when this is omitted.
+   * EarthBank API origin, with no path. Omit it and the module uses the host's
+   * `axios.defaults.baseURL` (client001 sets that from `SERVER_API_URL`), then
+   * the page origin. `https://testapp.ausgeochem.org` is used only in this
+   * repository's dev server when neither is set.
    */
   apiBaseUrl?: string;
 

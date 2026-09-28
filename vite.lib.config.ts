@@ -13,7 +13,7 @@ export default defineConfig({
       fileName: "index",
     },
     rollupOptions: {
-      external: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime"],
+      external: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "axios"],
     },
     sourcemap: true,
     emptyOutDir: false,

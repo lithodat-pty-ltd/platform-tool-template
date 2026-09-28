@@ -221,8 +221,8 @@ export function SandboxHost({
             />
           </label>
           <p className="sandbox-host__hint">
-            Leave this blank to use {EARTHBANK_ORIGIN}, which is what the module does when the client omits{" "}
-            <code>apiBaseUrl</code>.
+            Leave this blank while developing to call {EARTHBANK_ORIGIN}. A published module does not use that
+            address. It uses the origin on the host's axios (<code>axios.defaults.baseURL</code>).
           </p>
         </fieldset>
 

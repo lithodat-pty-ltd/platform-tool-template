@@ -9,5 +9,5 @@
     "rootDir": "src"
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"],
-  "exclude": ["src/**/*.test.ts", "src/sandbox/**", "src/vite-env.d.ts"]
+  "exclude": ["src/**/*.test.ts", "src/sandbox/**", "src/vite-env.d.ts", "src/platform/axiosDevStub.ts"]
 }
