@@ -1,3 +1,5 @@
+import type { GraniteBrand, GraniteMode } from "./platform/granite";
+
 /**
  * Host contract for a platform tool module.
  *
@@ -127,10 +129,10 @@ export type BoundingBoxInput =
  * also clears state held inside the module.
  */
 export interface PlatformTheme {
-  /** Same value as `runtimeThemeTokens.graniteBrand`. */
-  graniteBrand?: string;
-  /** Same value as `runtimeThemeTokens.surfaceMode`, for example "light" or "dark". */
-  surfaceMode?: string;
+  /** Same value as `runtimeThemeTokens.graniteBrand`. One of `lithodat`, `earthbank`, `amira`, `dmgeode`. */
+  graniteBrand?: GraniteBrand;
+  /** Same value as `runtimeThemeTokens.surfaceMode`. `midnight` is valid for `amira` only. */
+  surfaceMode?: GraniteMode;
   /**
    * Tokens from the Granite module. Keys may already be CSS variables
    * (`--pt-accent`) or bare names (`pt-accent`). Map Granite's own names
@@ -159,6 +161,12 @@ export interface PlatformToolProps {
   getToken?: TokenGetter;
   /** A JWT the host already holds. Ignored when `getToken` is set. */
   token?: string;
+
+  /**
+   * EarthBank API origin, with no path. The module client uses
+   * `https://app.ausgeochem.org` when this is omitted.
+   */
+  apiBaseUrl?: string;
 
   /** Map instance. Omit it for a tool that does not draw on the map. `null` is treated as omitted. */
   map?: PlatformMap | null;

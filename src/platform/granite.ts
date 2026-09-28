@@ -1,14 +1,17 @@
 /**
  * Stand-in for the Granite module.
  *
- * The platform theme has two axes, `graniteBrand` and `surfaceMode`. The host
- * often remounts a tool with that pair as the React key. Until the real
- * Granite package is available, `tokensForBrand` follows those axes so a
- * module still tracks the platform theme.
+ * Brands and modes match `@lithodat-pty-ltd/granite-core`:
+ * `lithodat | earthbank | amira | dmgeode` and `light | dark | midnight`.
+ * `midnight` is an Amira mode. Any other brand that asks for it is rendered as `dark`.
+ *
+ * The host often remounts a tool with `graniteBrand` and `surfaceMode` as the
+ * React key. Until the real Granite package is available, `tokensForBrand`
+ * follows those axes so a module still tracks the platform theme.
  *
  * Replace the body with the real package when you have it:
  *
- *   import { tokensFor } from "@your-org/granite";
+ *   import { tokensFor } from "@lithodat-pty-ltd/granite-core";
  *   export function tokensForBrand(brand?: string, surface?: string) {
  *     return tokensFor(brand, surface);
  *   }
@@ -17,10 +20,9 @@
  * variables below). Then every module shares one Granite version, and a tool
  * can be built without that package on its dependency list.
  *
- * Any `surfaceMode` whose name contains "dark" selects the dark preset.
- * Anything else, including an omitted surface, selects the light preset.
- * Unknown brand names fall back to the granite palette. The original brand
- * string is still set on `data-granite-brand` so a host stylesheet can target it.
+ * A missing or unknown brand becomes `earthbank`. A missing or unknown mode
+ * becomes `light`. The panel's `data-granite-brand` and `data-surface-mode`
+ * are those resolved values.
  */
 
 export const PLATFORM_TOOL_CSS_VARIABLES = [
@@ -37,21 +39,61 @@ export const PLATFORM_TOOL_CSS_VARIABLES = [
   "--pt-radius",
 ] as const;
 
-export const GRANITE_BRANDS = ["granite", "copper", "basalt"] as const;
+/** Same union as `GraniteBrand` in `@lithodat-pty-ltd/granite-core`. */
+export const GRANITE_BRANDS = ["lithodat", "earthbank", "amira", "dmgeode"] as const;
+
+/** Same union as `GraniteMode` in `@lithodat-pty-ltd/granite-core`. */
+export const GRANITE_MODES = ["light", "dark", "midnight"] as const;
+
+export type GraniteBrand = (typeof GRANITE_BRANDS)[number];
+
+export type GraniteMode = (typeof GRANITE_MODES)[number];
+
+export const DEFAULT_GRANITE_BRAND: GraniteBrand = "earthbank";
+
+export const DEFAULT_GRANITE_MODE: GraniteMode = "light";
 
 const FONT = '"Segoe UI", "Helvetica Neue", sans-serif';
 
-const ACCENTS: Record<string, { light: string; dark: string }> = {
-  granite: { light: "#6e4b3a", dark: "#d7b59a" },
-  copper: { light: "#b15a2a", dark: "#e39a62" },
-  basalt: { light: "#2f5573", dark: "#8fabc4" },
+/**
+ * Accent hexes taken from Granite globals (`color.orange`, `color.earthbank`, `color.amira-cyan`).
+ * DMGeode brand tokens are still a placeholder in Granite, so that accent is local until they land.
+ */
+const ACCENTS: Record<GraniteBrand, { light: string; dark: string }> = {
+  lithodat: { light: "#ff8d28", dark: "#ffa855" },
+  earthbank: { light: "#282982", dark: "#6e73da" },
+  amira: { light: "#00a7e2", dark: "#00a7e2" },
+  dmgeode: { light: "#5c6b73", dark: "#9aabb6" },
 };
 
+export interface ResolvedGraniteTheme {
+  brand: GraniteBrand;
+  mode: GraniteMode;
+}
+
+/** Keeps only a known Granite brand and mode. `midnight` survives only for `amira`. */
+export function resolveGraniteTheme(brand?: string, surface?: string): ResolvedGraniteTheme {
+  const resolvedBrand = graniteBrandOf(brand);
+  return { brand: resolvedBrand, mode: graniteModeOf(resolvedBrand, surface) };
+}
+
 export function tokensForBrand(brand?: string, surface?: string): Record<string, string> {
-  const dark = (surface ?? "").toLowerCase().includes("dark");
-  const key = (brand ?? "granite").trim().toLowerCase();
-  const accent = ACCENTS[key] ?? ACCENTS.granite;
-  return dark ? darkTheme(accent.dark) : lightTheme(accent.light);
+  const { brand: resolvedBrand, mode } = resolveGraniteTheme(brand, surface);
+  const accent = ACCENTS[resolvedBrand];
+  if (mode === "midnight") return midnightTheme(accent.light);
+  return mode === "dark" ? darkTheme(accent.dark) : lightTheme(accent.light);
+}
+
+function graniteBrandOf(value: string | undefined): GraniteBrand {
+  const key = value?.trim().toLowerCase();
+  return GRANITE_BRANDS.find((brand) => brand === key) ?? DEFAULT_GRANITE_BRAND;
+}
+
+function graniteModeOf(brand: GraniteBrand, value: string | undefined): GraniteMode {
+  const key = value?.trim().toLowerCase();
+  const mode = GRANITE_MODES.find((item) => item === key) ?? DEFAULT_GRANITE_MODE;
+  if (mode === "midnight" && brand !== "amira") return "dark";
+  return mode;
 }
 
 /** Prefix bare token names so they can be written onto the panel style. */
@@ -78,6 +120,17 @@ function lightTheme(accent: string): Record<string, string> {
     "--pt-danger": "#8f2d2d",
     "--pt-shadow": "0 12px 32px rgba(28, 25, 21, 0.16)",
     "--pt-radius": "10px",
+  };
+}
+
+/** Amira midnight uses the navy surface from Granite (`color.amira-navy.900`). */
+function midnightTheme(accent: string): Record<string, string> {
+  return {
+    ...darkTheme(accent),
+    "--pt-bg": "#022038",
+    "--pt-panel": "#052460",
+    "--pt-border": "#1a4fa3",
+    "--pt-accent-fg": "#052460",
   };
 }
 

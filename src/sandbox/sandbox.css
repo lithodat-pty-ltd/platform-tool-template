@@ -204,6 +204,24 @@ body {
   display: block;
 }
 
+.sandbox-host__facts {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px 12px;
+  margin: 10px 0 0;
+  font-size: 13px;
+}
+
+.sandbox-host__facts dt {
+  margin: 0;
+  color: #6b645c;
+}
+
+.sandbox-host__facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
 .sandbox-host__error {
   margin: 6px 0 0;
   color: #8f2d2d;

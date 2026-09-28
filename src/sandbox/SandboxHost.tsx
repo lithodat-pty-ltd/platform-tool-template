@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { BoundingBox, ControlPanelPosition, PlatformTheme, SearchSpec } from "../contract";
 import { normalizeBoundingBox, resolveDataScope } from "../platform/dataScope";
-import { GRANITE_BRANDS } from "../platform/granite";
-import { MyTool } from "../tool/MyTool";
+import { EARTHBANK_ORIGIN } from "../platform/api";
+import { DEFAULT_GRANITE_BRAND, DEFAULT_GRANITE_MODE, GRANITE_BRANDS, GRANITE_MODES, type GraniteBrand, type GraniteMode } from "../platform/granite";
+import { FormattedFileDownload } from "../tool/MyTool";
 import { toolManifest } from "../tool/manifest";
 import { makeDemoJwt } from "./demoToken";
 import { MapPane } from "./MapPane";
@@ -17,9 +18,9 @@ const DEFAULT_SEARCH = `{
 }`;
 
 /**
- * Stands in for the platform. This file is not the module.
- * The floating panel is `MyTool`. Everything in the side column is the host
- * deciding which of the standard parameters to pass.
+ * Stands in for the EarthBank client. This file is not the module and is not published.
+ * The floating panel is the tool. The side column is every host parameter, so the tool can be
+ * tried here before it is registered in the client.
  */
 export function SandboxHost() {
   const mapRef = useRef<MockMap | null>(null);
@@ -32,14 +33,16 @@ export function SandboxHost() {
   const [passClose, setPassClose] = useState(true);
   const [passToken, setPassToken] = useState(true);
   const [failToken, setFailToken] = useState(false);
-  const [analysis, setAnalysis] = useState(true);
-  const [canExport, setCanExport] = useState(false);
+  const [heldLicenses, setHeldLicenses] = useState<Readonly<Record<string, boolean>>>(() =>
+    Object.fromEntries(toolManifest.licenses.map((license) => [license.id, true])),
+  );
   const [otherLicense, setOtherLicense] = useState(false);
-  const [sendSearch, setSendSearch] = useState(true);
-  const [sendIds, setSendIds] = useState(false);
+  const [apiBaseUrl, setApiBaseUrl] = useState("");
+  const [sendSearch, setSendSearch] = useState(false);
+  const [sendIds, setSendIds] = useState(true);
   const [sendBox, setSendBox] = useState(false);
   const [searchText, setSearchText] = useState(DEFAULT_SEARCH);
-  const [idsText, setIdsText] = useState("SMP-1042\nSMP-1048\nSMP-1101");
+  const [idsText, setIdsText] = useState(SAMPLE_IDS);
   const [west, setWest] = useState("115.5");
   const [south, setSouth] = useState("-32.2");
   const [east, setEast] = useState("121.8");
@@ -47,8 +50,8 @@ export function SandboxHost() {
   const [left, setLeft] = useState("50");
   const [top, setTop] = useState("80");
   const [themeMode, setThemeMode] = useState<"granite" | "css">("granite");
-  const [graniteBrand, setGraniteBrand] = useState<string>(GRANITE_BRANDS[0]);
-  const [surfaceMode, setSurfaceMode] = useState("light");
+  const [graniteBrand, setGraniteBrand] = useState<GraniteBrand>(DEFAULT_GRANITE_BRAND);
+  const [surfaceMode, setSurfaceMode] = useState<GraniteMode>(DEFAULT_GRANITE_MODE);
   const [draggedTo, setDraggedTo] = useState<string | null>(null);
 
   useEffect(() => {
@@ -71,12 +74,11 @@ export function SandboxHost() {
   }, [sendBox, west, south, east, north]);
 
   const licenses = useMemo(() => {
-    const list: string[] = [];
-    if (analysis) list.push("example.analysis");
-    if (canExport) list.push("example.export");
+    const list = toolManifest.licenses.map((license) => license.id).filter((id) => heldLicenses[id]);
     if (otherLicense) list.push("platform.bookmarks");
     return list;
-  }, [analysis, canExport, otherLicense]);
+  }, [heldLicenses, otherLicense]);
+  const apiOrigin = apiBaseUrl.trim();
 
   const controlPanelPosition = useMemo(() => readPosition(left, top), [left, top]);
   const theme = useMemo<PlatformTheme>(() => {
@@ -116,8 +118,9 @@ export function SandboxHost() {
           <p className="sandbox-host__kicker">Platform host</p>
           <h1>Tool sandbox</h1>
           <p>
-            The floating panel is the npm module. This column is the platform. Change the parameters, then edit{" "}
-            <code>src/tool/MyTool.tsx</code>.
+            The floating panel is the npm module (<code>{toolManifest.displayName}</code>). This column is the EarthBank
+            client. Exercise the tool here, then register it with <code>examples/host-mount.tsx</code>. The sandbox is
+            not part of the published package.
           </p>
         </header>
 
@@ -129,7 +132,7 @@ export function SandboxHost() {
           </p>
           <label>
             <input type="checkbox" checked={sendSearch} onChange={(event) => setSendSearch(event.target.checked)} />
-            Search spec
+            Search spec{toolManifest.accepts.searchSpec ? "" : " (this module ignores it)"}
           </label>
           {sendSearch ? (
             <>
@@ -139,14 +142,14 @@ export function SandboxHost() {
           ) : null}
           <label>
             <input type="checkbox" checked={sendIds} onChange={(event) => setSendIds(event.target.checked)} />
-            List of ids
+            List of ids{toolManifest.accepts.ids ? "" : " (this module ignores it)"}
           </label>
           {sendIds ? (
             <textarea value={idsText} onChange={(event) => setIdsText(event.target.value)} rows={4} spellCheck={false} />
           ) : null}
           <label>
             <input type="checkbox" checked={sendBox} onChange={(event) => setSendBox(event.target.checked)} />
-            Bounding box
+            Bounding box{toolManifest.accepts.boundingBox ? "" : " (this module ignores it)"}
           </label>
           {sendBox ? (
             <>
@@ -172,6 +175,24 @@ export function SandboxHost() {
         </fieldset>
 
         <fieldset>
+          <legend>EarthBank API</legend>
+          <label className="sandbox-host__stack">
+            API origin
+            <input
+              value={apiBaseUrl}
+              onChange={(event) => setApiBaseUrl(event.target.value)}
+              placeholder={EARTHBANK_ORIGIN}
+              spellCheck={false}
+              autoComplete="off"
+            />
+          </label>
+          <p className="sandbox-host__hint">
+            Leave this blank to use {EARTHBANK_ORIGIN}, which is what the module does when the client omits{" "}
+            <code>apiBaseUrl</code>.
+          </p>
+        </fieldset>
+
+        <fieldset>
           <legend>Access and licenses</legend>
           <label>
             <input type="checkbox" checked={passToken} onChange={(event) => setPassToken(event.target.checked)} />
@@ -181,17 +202,25 @@ export function SandboxHost() {
             <input type="checkbox" checked={failToken} onChange={(event) => setFailToken(event.target.checked)} />
             Next token request fails
           </label>
-          <label>
-            <input type="checkbox" checked={analysis} onChange={(event) => setAnalysis(event.target.checked)} />
-            example.analysis
-          </label>
-          <label>
-            <input type="checkbox" checked={canExport} onChange={(event) => setCanExport(event.target.checked)} />
-            example.export
-          </label>
+          {toolManifest.licenses.length === 0 ? (
+            <p className="sandbox-host__hint">This module declares no license ids in its manifest.</p>
+          ) : (
+            toolManifest.licenses.map((license) => (
+              <label key={license.id}>
+                <input
+                  type="checkbox"
+                  checked={heldLicenses[license.id] === true}
+                  onChange={(event) =>
+                    setHeldLicenses((current) => ({ ...current, [license.id]: event.target.checked }))
+                  }
+                />
+                {license.id}
+              </label>
+            ))
+          )}
           <label>
             <input type="checkbox" checked={otherLicense} onChange={(event) => setOtherLicense(event.target.checked)} />
-            platform.bookmarks (unused by this module)
+            platform.bookmarks (not declared by this module)
           </label>
         </fieldset>
 
@@ -233,7 +262,13 @@ export function SandboxHost() {
           </label>
           <label className="sandbox-host__stack">
             Brand
-            <select value={graniteBrand} onChange={(event) => setGraniteBrand(event.target.value)}>
+            <select
+              value={graniteBrand}
+              onChange={(event) => {
+                const next = GRANITE_BRANDS.find((brand) => brand === event.target.value);
+                if (next) setGraniteBrand(next);
+              }}
+            >
               {GRANITE_BRANDS.map((brand) => (
                 <option key={brand} value={brand}>
                   {brand}
@@ -243,14 +278,39 @@ export function SandboxHost() {
           </label>
           <label className="sandbox-host__stack">
             Surface
-            <select value={surfaceMode} onChange={(event) => setSurfaceMode(event.target.value)}>
-              <option value="light">light</option>
-              <option value="dark">dark</option>
+            <select
+              value={surfaceMode}
+              onChange={(event) => {
+                const next = GRANITE_MODES.find((mode) => mode === event.target.value);
+                if (next) setSurfaceMode(next);
+              }}
+            >
+              {GRANITE_MODES.map((mode) => (
+                <option key={mode} value={mode}>
+                  {mode}
+                </option>
+              ))}
             </select>
           </label>
           <p className="sandbox-host__hint">
-            Remount key {graniteBrand}:{surfaceMode}, the same pair Swath Profile uses.
+            Remount key {graniteBrand}:{surfaceMode}, the same pair the EarthBank client uses.
           </p>
+        </fieldset>
+
+        <fieldset>
+          <legend>Client registration</legend>
+          <p className="sandbox-host__hint">
+            Publish the module, then add one registration in the EarthBank client. The client passes the same
+            parameters this page is passing now.
+          </p>
+          <dl className="sandbox-host__facts">
+            <dt>Tool id</dt>
+            <dd>{toolManifest.id}</dd>
+            <dt>Map</dt>
+            <dd>{toolManifest.requiresMap ? "Required" : "Optional"}</dd>
+            <dt>API origin in use</dt>
+            <dd>{apiOrigin || `${EARTHBANK_ORIGIN} (default)`}</dd>
+          </dl>
         </fieldset>
 
         {!open ? (
@@ -262,7 +322,7 @@ export function SandboxHost() {
 
       {open ? (
         <ToolErrorBoundary key={`${graniteBrand}:${surfaceMode}:${themeMode}`}>
-          <MyTool
+          <FormattedFileDownload
             key={`${graniteBrand}:${surfaceMode}:${themeMode}`}
             map={passMap ? map : undefined}
             getToken={passToken ? getToken : undefined}
@@ -274,6 +334,7 @@ export function SandboxHost() {
               setDraggedTo(`${String(leftEdge)}, ${String(topEdge)}`);
             }}
             licenses={licenses}
+            apiBaseUrl={apiOrigin || undefined}
             theme={theme}
             searchSpec={search.spec}
             ids={ids}
@@ -309,6 +370,11 @@ function readNumber(value: string): number | undefined {
   const number = Number(value);
   return Number.isFinite(number) ? number : undefined;
 }
+
+const SAMPLE_IDS = [
+  1216651, 1216652, 1216653, 1216654, 1216655, 1216656, 1216657, 1216658, 1216659, 1216660, 1216661, 1216662,
+  1216663, 1216664, 1216665, 1216666, 1216667, 1216668, 1216669, 1216670, 1216671, 1216672, 1216673, 1216674,
+].join("\n");
 
 function parseIds(text: string): string[] {
   return text
