@@ -11,7 +11,8 @@ import { makeDemoJwt } from "./demoToken";
 import { MapPane } from "./MapPane";
 import { ToolErrorBoundary } from "./ToolErrorBoundary";
 
-const CALLER_CODE = `npm install github:lithodat-pty-ltd/platform-tool-template
+function callerCode(left: string, top: string): string {
+  return `npm install github:lithodat-pty-ltd/platform-tool-template
 
 import { FormattedFileDownload, toolManifest } from "platform-tool-template";
 
@@ -20,6 +21,7 @@ const registration = { Component: FormattedFileDownload, manifest: toolManifest 
 <FormattedFileDownload
   getToken={getAccessToken}
   onClose={closeTool}
+  controlPanelPosition={{ left: ${positionLiteral(left)}, top: ${positionLiteral(top)} }}
   theme={{ graniteBrand: "earthbank", surfaceMode: "light" }}
   licenses={userLicenses}
   searchSpec={currentSearch}
@@ -27,6 +29,15 @@ const registration = { Component: FormattedFileDownload, manifest: toolManifest 
   boundingBox={currentExtent}
   map={mglMap}
 />`;
+}
+
+function positionLiteral(value: string): string {
+  const trimmed = value.trim();
+  if (trimmed === "") return "undefined";
+  const number = Number(trimmed);
+  if (Number.isFinite(number) && String(number) === trimmed) return trimmed;
+  return JSON.stringify(trimmed);
+}
 
 const DEFAULT_SEARCH = `{
   "text": "komatiite",
@@ -71,8 +82,8 @@ export function SandboxHost({
   const [south, setSouth] = useState("-32.2");
   const [east, setEast] = useState("121.8");
   const [north, setNorth] = useState("-26.4");
-  const [left, setLeft] = useState("50");
-  const [top, setTop] = useState("80");
+  const [left, setLeft] = useState(String(toolManifest.defaultControlPanelPosition.left ?? 50));
+  const [top, setTop] = useState(String(toolManifest.defaultControlPanelPosition.top ?? 80));
   const [themeMode, setThemeMode] = useState<"granite" | "css">("granite");
   const [graniteBrand, setGraniteBrand] = useState<GraniteBrand>(DEFAULT_GRANITE_BRAND);
   const [surfaceMode, setSurfaceMode] = useState<GraniteMode>(DEFAULT_GRANITE_MODE);
@@ -112,6 +123,7 @@ export function SandboxHost({
   const apiOrigin = apiBaseUrl.trim();
 
   const controlPanelPosition = useMemo(() => readPosition(left, top), [left, top]);
+  const callerMount = useMemo(() => callerCode(left, top), [left, top]);
   const theme = useMemo<PlatformTheme>(() => {
     if (themeMode === "css") {
       return {
@@ -372,10 +384,11 @@ export function SandboxHost({
           <h2>Caller code</h2>
           <p className="sandbox-host__hint">
             Install the package from GitHub, then mount it. The theme is the EarthBank pair client001 already passes:
-            earthbank and light.
+            earthbank and light. <code>controlPanelPosition</code> starts at the module default, left 50 and top 80, and
+            follows the position above. The host can override it.
           </p>
           <pre>
-            <code>{CALLER_CODE}</code>
+            <code>{callerMount}</code>
           </pre>
         </section>
       </aside>
@@ -392,6 +405,8 @@ export function SandboxHost({
             onControlPanelPositionChange={(position) => {
               const leftEdge = position.left ?? position.right;
               const topEdge = position.top ?? position.bottom;
+              if (leftEdge != null) setLeft(String(leftEdge));
+              if (topEdge != null) setTop(String(topEdge));
               setDraggedTo(`${String(leftEdge)}, ${String(topEdge)}`);
             }}
             licenses={licenses}

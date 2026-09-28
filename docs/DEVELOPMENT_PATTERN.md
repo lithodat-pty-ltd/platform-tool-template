@@ -219,6 +219,7 @@ const registration = { Component: FormattedFileDownload, manifest: toolManifest 
 <FormattedFileDownload
   getToken={getAccessToken}
   onClose={closeTool}
+  controlPanelPosition={{ left: 50, top: 80 }}
   theme={{ graniteBrand: "earthbank", surfaceMode: "light" }}
   licenses={userLicenses}
   searchSpec={currentSearch}
@@ -228,7 +229,7 @@ const registration = { Component: FormattedFileDownload, manifest: toolManifest 
 />
 ```
 
-`theme.graniteBrand` and `theme.surfaceMode` are the values client001 passes into Granite: `earthbank` and `light`.
+`theme.graniteBrand` and `theme.surfaceMode` are the values client001 passes into Granite: `earthbank` and `light`. `controlPanelPosition` is the module default, `{ left: 50, top: 80 }`. The host can override it.
 
 `examples/registry.json` is the list of packages. The platform bundle cannot import an unknown package name out of thin air, so adding a module is still a dependency and one registration. That is the whole integration. Do not copy the tool's components into the platform repository.
 
