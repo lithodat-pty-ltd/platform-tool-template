@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import type { ControlPanelPosition, PlatformTheme } from "../contract";
-import { cssVariablesFrom, tokensForBrand } from "./granite";
+import { cssVariablesFrom, resolveGraniteTheme, tokensForBrand } from "./granite";
 import { positionToStyle } from "./position";
 import { useStylesheet } from "./useStylesheet";
 import "./theme.css";
@@ -37,8 +37,9 @@ export function ControlPanel({
   useStylesheet(theme?.stylesheetHref);
 
   const hostOwnsColor = Boolean(theme?.stylesheetHref?.trim() || theme?.className?.trim());
+  const granite = resolveGraniteTheme(theme?.graniteBrand, theme?.surfaceMode);
   const variables = {
-    ...(hostOwnsColor ? {} : tokensForBrand(theme?.graniteBrand, theme?.surfaceMode)),
+    ...(hostOwnsColor ? {} : tokensForBrand(granite.brand, granite.mode)),
     ...cssVariablesFrom(theme?.graniteTokens),
     ...cssVariablesFrom(theme?.cssVariables),
   };
@@ -91,8 +92,8 @@ export function ControlPanel({
       aria-labelledby={titleId}
       aria-modal="false"
       data-tool-id={toolId}
-      data-granite-brand={theme?.graniteBrand?.trim() || "granite"}
-      data-surface-mode={theme?.surfaceMode?.trim() || "light"}
+      data-granite-brand={granite.brand}
+      data-surface-mode={granite.mode}
       onKeyDown={onKeyDown}
     >
       <header

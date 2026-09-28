@@ -30,7 +30,7 @@ All of them are optional. Omit what the tool does not need. Do not throw when on
 | `controlPanelPosition` | Override of the module default `{ left: 50, top: 80 }`. Numbers are pixels. |
 | `onControlPanelPositionChange` | Last position after the user drags the panel. |
 | `licenses` | License strings, or `{ id }` / `{ name }` records. The module decides what to show. |
-| `theme` | Granite (`graniteBrand`, `surfaceMode`, `graniteTokens`) or a CSS reference (`stylesheetHref`, `className`). |
+| `theme` | Granite brand (`lithodat`, `earthbank`, `amira`, `dmgeode`), surface (`light`, `dark`, `midnight`), and `graniteTokens` — or a CSS reference (`stylesheetHref`, `className`). |
 | `searchSpec` | Host search: text, dataset, filters, sort, and paging. |
 | `ids` | Record ids to open. |
 | `boundingBox` | `{ west, south, east, north }`, `[west, south, east, north]`, or a map bounds object. |

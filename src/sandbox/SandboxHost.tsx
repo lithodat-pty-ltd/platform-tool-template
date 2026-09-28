@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { BoundingBox, ControlPanelPosition, PlatformTheme, SearchSpec } from "../contract";
 import { normalizeBoundingBox, resolveDataScope } from "../platform/dataScope";
-import { GRANITE_BRANDS } from "../platform/granite";
+import { DEFAULT_GRANITE_BRAND, DEFAULT_GRANITE_MODE, GRANITE_BRANDS, GRANITE_MODES, type GraniteBrand, type GraniteMode } from "../platform/granite";
 import { FormattedFileDownload } from "../tool/MyTool";
 import { toolManifest } from "../tool/manifest";
 import { makeDemoJwt } from "./demoToken";
@@ -47,8 +47,8 @@ export function SandboxHost() {
   const [left, setLeft] = useState("50");
   const [top, setTop] = useState("80");
   const [themeMode, setThemeMode] = useState<"granite" | "css">("granite");
-  const [graniteBrand, setGraniteBrand] = useState<string>(GRANITE_BRANDS[0]);
-  const [surfaceMode, setSurfaceMode] = useState("light");
+  const [graniteBrand, setGraniteBrand] = useState<GraniteBrand>(DEFAULT_GRANITE_BRAND);
+  const [surfaceMode, setSurfaceMode] = useState<GraniteMode>(DEFAULT_GRANITE_MODE);
   const [draggedTo, setDraggedTo] = useState<string | null>(null);
 
   useEffect(() => {
@@ -233,7 +233,13 @@ export function SandboxHost() {
           </label>
           <label className="sandbox-host__stack">
             Brand
-            <select value={graniteBrand} onChange={(event) => setGraniteBrand(event.target.value)}>
+            <select
+              value={graniteBrand}
+              onChange={(event) => {
+                const next = GRANITE_BRANDS.find((brand) => brand === event.target.value);
+                if (next) setGraniteBrand(next);
+              }}
+            >
               {GRANITE_BRANDS.map((brand) => (
                 <option key={brand} value={brand}>
                   {brand}
@@ -243,9 +249,18 @@ export function SandboxHost() {
           </label>
           <label className="sandbox-host__stack">
             Surface
-            <select value={surfaceMode} onChange={(event) => setSurfaceMode(event.target.value)}>
-              <option value="light">light</option>
-              <option value="dark">dark</option>
+            <select
+              value={surfaceMode}
+              onChange={(event) => {
+                const next = GRANITE_MODES.find((mode) => mode === event.target.value);
+                if (next) setSurfaceMode(next);
+              }}
+            >
+              {GRANITE_MODES.map((mode) => (
+                <option key={mode} value={mode}>
+                  {mode}
+                </option>
+              ))}
             </select>
           </label>
           <p className="sandbox-host__hint">

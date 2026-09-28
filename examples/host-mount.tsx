@@ -1,5 +1,6 @@
 import type { ComponentType } from "react";
 import type { PlatformToolProps, ToolManifest } from "../src/contract";
+import type { GraniteBrand, GraniteMode } from "../src/platform/granite";
 
 /**
  * Reference mount for the platform. This file is not published as the tool UI.
@@ -39,8 +40,8 @@ export function PlatformToolSlot({
 }: {
   tool: PlatformToolRegistration;
   open: boolean;
-  graniteBrand?: string;
-  surfaceMode?: string;
+  graniteBrand?: GraniteBrand;
+  surfaceMode?: GraniteMode;
 } & PlatformToolProps) {
   if (!open) return null;
   const Tool = tool.Component;

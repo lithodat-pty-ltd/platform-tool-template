@@ -1,3 +1,5 @@
+import type { GraniteBrand, GraniteMode } from "./platform/granite";
+
 /**
  * Host contract for a platform tool module.
  *
@@ -127,10 +129,10 @@ export type BoundingBoxInput =
  * also clears state held inside the module.
  */
 export interface PlatformTheme {
-  /** Same value as `runtimeThemeTokens.graniteBrand`. */
-  graniteBrand?: string;
-  /** Same value as `runtimeThemeTokens.surfaceMode`, for example "light" or "dark". */
-  surfaceMode?: string;
+  /** Same value as `runtimeThemeTokens.graniteBrand`. One of `lithodat`, `earthbank`, `amira`, `dmgeode`. */
+  graniteBrand?: GraniteBrand;
+  /** Same value as `runtimeThemeTokens.surfaceMode`. `midnight` is valid for `amira` only. */
+  surfaceMode?: GraniteMode;
   /**
    * Tokens from the Granite module. Keys may already be CSS variables
    * (`--pt-accent`) or bare names (`pt-accent`). Map Granite's own names

@@ -163,7 +163,7 @@ The platform look comes from Granite, or from a stylesheet the host already has.
 
 Use one of these:
 
-1. **Granite tokens.** The host passes `theme.graniteBrand`, `theme.surfaceMode`, and `theme.graniteTokens` from the Granite module. Map Granite's names onto the variables below. Built-in presets follow brand and surface until those tokens arrive. A surface name that contains `"dark"` selects the dark preset. Any other name selects light. Unknown brands use the granite palette, and the original brand string is still set on `data-granite-brand`.
+1. **Granite tokens.** The host passes `theme.graniteBrand`, `theme.surfaceMode`, and `theme.graniteTokens` from the Granite module. Map Granite's names onto the variables below. Built-in presets follow brand and surface until those tokens arrive. `graniteBrand` is `lithodat`, `earthbank`, `amira`, or `dmgeode`. `surfaceMode` is `light`, `dark`, or `midnight`. `midnight` is kept for `amira` and rendered as `dark` for the other brands. A missing or unknown name becomes `earthbank` and `light`. `data-granite-brand` and `data-surface-mode` are those resolved values.
 2. **CSS reference.** Pass `theme.stylesheetHref` (a URL the page can load) or `theme.className` (a class whose CSS is already on the page). Built-in colour presets are skipped so your sheet is visible. Layout still comes from the module.
 
 `theme.graniteTokens` and `theme.cssVariables` are written on the panel element, so they win over stylesheet rules. Do not pass them together with a CSS reference unless that is what you want.
