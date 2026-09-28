@@ -25,7 +25,7 @@ All of them are optional. Omit what the tool does not need. Do not throw when on
 | `getToken` | Function that returns a JWT. The host can refresh it. Same role as `getSwathProfileAccessToken`. |
 | `token` | A JWT string, used only when `getToken` is not passed. |
 | `apiBaseUrl` | EarthBank API origin. The module client uses `https://app.ausgeochem.org` when this is omitted. |
-| `map` | MapLibre / Mapbox map. Optional. `null` means no map. |
+| `map` | The caller's Mapbox map (`MapProvider` or `mglMap`). Optional. `null` means no map. The module does not take a Mapbox access token. |
 | `onClose` | Asks the host to hide the tool. Optional. The module does not unmount itself. |
 | `controlPanelPosition` | Override of the module default `{ left: 50, top: 80 }`. Numbers are pixels. |
 | `onControlPanelPositionChange` | Last position after the user drags the panel. |
@@ -46,7 +46,7 @@ Send one data scope. If more than one arrives, ids win, then the search spec, th
     onClose={closeTool}
     controlPanelPosition={{ left: 50, top: 80 }}
     licenses={userLicenses}
-    theme={{ graniteBrand, surfaceMode, graniteTokens }}
+    theme={{ graniteBrand: "earthbank", surfaceMode: "light" }}
     searchSpec={currentSearch}
     ids={selectedIds}
     boundingBox={currentExtent}
@@ -72,6 +72,8 @@ npm run dev
 ```
 
 The page that opens is the host harness. The floating panel is the module (`src/tool/MyTool.tsx`). The side column passes the same parameters the EarthBank client will pass: data scope, token, licenses from the manifest, map, position, Granite brand, and API origin. Use it to prove the tool before you add the package to the client. `src/sandbox` is excluded from the published build.
+
+To open a real Mapbox map in that harness, set `VITE_MAPBOX_ACCESS_TOKEN` in `.env.local` (see `.env.example`) or paste a key into the Mapbox access token field. The demo client uses the key. The module ignores it and reads the map context the caller provides. Leave the key blank to keep the stand-in map.
 
 ```bash
 npm test

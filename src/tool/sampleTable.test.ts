@@ -90,6 +90,15 @@ describe("sample table numbers", () => {
     );
   });
 
+  it("uses the table name in the heading", () => {
+    const table = buildSampleTable([du1], {
+      retrievedOn: new Date("2026-09-24T00:00:00Z"),
+      origin: "https://app.ausgeochem.org",
+      tableName: "Table two",
+    });
+    expect(table.title).toBe("Table two | Sample information");
+  });
+
   it("names every analysis family the samples hold", () => {
     const table = buildSampleTable([{ ...du1, analysisCodes: ["GC", "FT", "UPB"] }], {
       retrievedOn: new Date("2026-09-24T00:00:00Z"),
@@ -113,7 +122,7 @@ describe("workbook", () => {
     });
     const bytes = sampleTableToXlsx(table);
     const sheet = storedText(bytes, "xl/worksheets/sheet1.xml");
-    expect(sheet).toContain("Table 1 | Sample information");
+    expect(sheet).toContain("Table one | Sample information");
     expect(sheet).toContain("Du1-1");
     expect(sheet).toContain("<v>-28.65943</v>");
     expect(sheet).toContain("<v>31</v>");

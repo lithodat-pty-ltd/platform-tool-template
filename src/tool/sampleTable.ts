@@ -57,21 +57,30 @@ export interface SampleTableRow {
 }
 
 export interface SampleTable {
+  title: string;
   filename: string;
   rows: readonly SampleTableRow[];
   footnotes: readonly string[];
 }
 
-const TITLE = "Table 1 | Sample information";
+/** Placeholder the example panel shows until a tool replaces it. */
+export const DEFAULT_TABLE_NAME = "Table one";
+
 const SUBTITLE =
   "Geosample metadata for every sample in the data package, reported to the minimum and recommended requirements of Kohn et al. (2024), table 4.";
 
+export function tableHeading(name?: string): string {
+  const trimmed = name?.trim() || DEFAULT_TABLE_NAME;
+  return `${trimmed} | Sample information`;
+}
+
 export function buildSampleTable(
   records: readonly SampleRecord[],
-  options: { retrievedOn: Date; origin: string },
+  options: { retrievedOn: Date; origin: string; tableName?: string },
 ): SampleTable {
   const ordered = [...records].sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" }));
   return {
+    title: tableHeading(options.tableName),
     filename: filenameFor(ordered),
     rows: ordered.map(toRow),
     footnotes: footnotesFor(ordered, options),
@@ -121,7 +130,7 @@ export function formatCitation(note: LiteratureNote): string {
   return text;
 }
 
-export const TABLE_TITLE = TITLE;
+export const TABLE_TITLE = tableHeading(DEFAULT_TABLE_NAME);
 export const TABLE_SUBTITLE = SUBTITLE;
 
 function toRow(record: SampleRecord): SampleTableRow {

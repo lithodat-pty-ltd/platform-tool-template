@@ -27,7 +27,7 @@ export interface ControlPanelPosition {
 
 /**
  * Minimum map surface used by the template.
- * The host passes its MapLibre or Mapbox instance (`mglMap`). Extend this
+ * The host passes its Mapbox instance (`mglMap`). Extend this
  * interface in your module for any further methods you call.
  */
 export interface PlatformMap {
@@ -168,7 +168,12 @@ export interface PlatformToolProps {
    */
   apiBaseUrl?: string;
 
-  /** Map instance. Omit it for a tool that does not draw on the map. `null` is treated as omitted. */
+  /**
+   * Map instance from the caller (`MapProvider` / `mglMap`). Omit it for a tool
+   * that does not draw on the map. `null` is treated as omitted. A Mapbox
+   * access token is not part of this contract. The demo client uses one only
+   * while developing, and the module ignores it.
+   */
   map?: PlatformMap | null;
 
   /**

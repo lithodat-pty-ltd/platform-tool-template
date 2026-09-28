@@ -1,14 +1,32 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { BoundingBox, ControlPanelPosition, PlatformTheme, SearchSpec } from "../contract";
 import { normalizeBoundingBox, resolveDataScope } from "../platform/dataScope";
 import { EARTHBANK_ORIGIN } from "../platform/api";
 import { DEFAULT_GRANITE_BRAND, DEFAULT_GRANITE_MODE, GRANITE_BRANDS, GRANITE_MODES, type GraniteBrand, type GraniteMode } from "../platform/granite";
+import { MapProvider } from "../platform/MapProvider";
 import { FormattedFileDownload } from "../tool/MyTool";
 import { toolManifest } from "../tool/manifest";
+import { useDemoMap, type DemoMap } from "./demoMap";
 import { makeDemoJwt } from "./demoToken";
 import { MapPane } from "./MapPane";
-import { createMockMap, type MockMap } from "./mockMap";
 import { ToolErrorBoundary } from "./ToolErrorBoundary";
+
+const CALLER_CODE = `npm install github:lithodat-pty-ltd/platform-tool-template
+
+import { FormattedFileDownload, toolManifest } from "platform-tool-template";
+
+const registration = { Component: FormattedFileDownload, manifest: toolManifest };
+
+<FormattedFileDownload
+  getToken={getAccessToken}
+  onClose={closeTool}
+  theme={{ graniteBrand: "earthbank", surfaceMode: "light" }}
+  licenses={userLicenses}
+  searchSpec={currentSearch}
+  ids={selectedIds}
+  boundingBox={currentExtent}
+  map={mglMap}
+/>`;
 
 const DEFAULT_SEARCH = `{
   "text": "komatiite",
@@ -22,10 +40,16 @@ const DEFAULT_SEARCH = `{
  * The floating panel is the tool. The side column is every host parameter, so the tool can be
  * tried here before it is registered in the client.
  */
-export function SandboxHost() {
-  const mapRef = useRef<MockMap | null>(null);
-  if (!mapRef.current) mapRef.current = createMockMap();
-  const map = mapRef.current;
+export function SandboxHost({
+  mapboxAccessToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN ?? "",
+}: {
+  /** Development only. The published module ignores this and uses the caller's map context. */
+  mapboxAccessToken?: string;
+} = {}) {
+  const [mapboxKey, setMapboxKey] = useState(mapboxAccessToken);
+  const [appliedMapboxKey, setAppliedMapboxKey] = useState(mapboxAccessToken);
+  const demoMap = useDemoMap(appliedMapboxKey);
+  const map = demoMap.map;
 
   const [mapView, setMapView] = useState(() => readMap(map));
   const [open, setOpen] = useState(true);
@@ -55,7 +79,14 @@ export function SandboxHost() {
   const [draggedTo, setDraggedTo] = useState<string | null>(null);
 
   useEffect(() => {
+    const handle = window.setTimeout(() => setAppliedMapboxKey(mapboxKey), 400);
+    return () => window.clearTimeout(handle);
+  }, [mapboxKey]);
+
+  useEffect(() => {
+    if (!map) return;
     const update = () => setMapView(readMap(map));
+    update();
     map.on?.("moveend", update);
     return () => map.off?.("moveend", update);
   }, [map]);
@@ -106,12 +137,15 @@ export function SandboxHost() {
   return (
     <div className="sandbox">
       <MapPane
-        connected={passMap}
+        connected={passMap && map != null}
         center={mapView.center}
         zoom={mapView.zoom}
         view={mapView.bounds}
         box={drawnBox}
         boxActive={resolved.kind === "boundingBox"}
+        source={demoMap.source}
+        mapError={demoMap.error}
+        mapContainerRef={demoMap.containerRef}
       />
       <aside className="sandbox-host">
         <header className="sandbox-host__intro">
@@ -230,6 +264,21 @@ export function SandboxHost() {
             <input type="checkbox" checked={passMap} onChange={(event) => setPassMap(event.target.checked)} />
             Pass the map
           </label>
+          <label className="sandbox-host__stack">
+            Mapbox access token
+            <input
+              type="text"
+              value={mapboxKey}
+              autoComplete="off"
+              spellCheck={false}
+              placeholder="pk."
+              onChange={(event) => setMapboxKey(event.target.value)}
+            />
+          </label>
+          <p className="sandbox-host__hint">
+            Development only. This demo client uses the key to open a Mapbox map. A published module ignores the key
+            and uses the map context the host provides. Leave the key blank to keep the stand-in map.
+          </p>
           <label>
             <input type="checkbox" checked={passClose} onChange={(event) => setPassClose(event.target.checked)} />
             Pass onClose
@@ -318,13 +367,25 @@ export function SandboxHost() {
             Open the tool
           </button>
         ) : null}
+
+        <section className="sandbox-host__caller" aria-label="Caller code">
+          <h2>Caller code</h2>
+          <p className="sandbox-host__hint">
+            Install the package from GitHub, then mount it. The theme is the EarthBank pair client001 already passes:
+            earthbank and light.
+          </p>
+          <pre>
+            <code>{CALLER_CODE}</code>
+          </pre>
+        </section>
       </aside>
 
       {open ? (
         <ToolErrorBoundary key={`${graniteBrand}:${surfaceMode}:${themeMode}`}>
+          <MapProvider map={passMap ? map : null}>
           <FormattedFileDownload
             key={`${graniteBrand}:${surfaceMode}:${themeMode}`}
-            map={passMap ? map : undefined}
+            map={passMap ? map ?? undefined : undefined}
             getToken={passToken ? getToken : undefined}
             onClose={passClose ? () => setOpen(false) : undefined}
             controlPanelPosition={controlPanelPosition}
@@ -340,6 +401,7 @@ export function SandboxHost() {
             ids={ids}
             boundingBox={boundingBox}
           />
+          </MapProvider>
         </ToolErrorBoundary>
       ) : null}
     </div>
@@ -396,11 +458,12 @@ function parseSearch(send: boolean, text: string): { spec: SearchSpec | undefine
   }
 }
 
-function readMap(map: MockMap): {
+function readMap(map: DemoMap | null): {
   center: { lng: number; lat: number } | null;
   zoom: number | null;
   bounds: BoundingBox | null;
 } {
+  if (!map) return { center: null, zoom: null, bounds: null };
   const center = map.getCenter?.() ?? null;
   const zoom = map.getZoom?.() ?? null;
   return { center, zoom, bounds: map.getViewBounds() };

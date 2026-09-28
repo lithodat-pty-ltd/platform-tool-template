@@ -1,6 +1,7 @@
 import type { ComponentType } from "react";
 import type { PlatformToolProps, ToolManifest } from "../src/contract";
 import type { GraniteBrand, GraniteMode } from "../src/platform/granite";
+import { MapProvider } from "../src/platform/MapProvider";
 
 /**
  * Reference mount for the platform. This file is not published as the tool UI.
@@ -23,6 +24,8 @@ import type { GraniteBrand, GraniteMode } from "../src/platform/granite";
  *
  * The slot below is the same mount, generalised. `showSwath` becomes `open`.
  * The component comes from the registry instead of a named import in the host.
+ * `MapProvider` is the caller's map. A Mapbox access token is a demo-client
+ * concern and is not passed here.
  */
 export interface PlatformToolRegistration {
   Component: ComponentType<PlatformToolProps>;
@@ -48,16 +51,18 @@ export function PlatformToolSlot({
   const brand = graniteBrand ?? theme?.graniteBrand ?? "";
   const surface = surfaceMode ?? theme?.surfaceMode ?? "";
   return (
-    <Tool
-      {...rest}
-      key={`${brand}:${surface}`}
-      theme={
-        theme ?? {
-          graniteBrand,
-          surfaceMode,
+    <MapProvider map={rest.map}>
+      <Tool
+        {...rest}
+        key={`${brand}:${surface}`}
+        theme={
+          theme ?? {
+            graniteBrand,
+            surfaceMode,
+          }
         }
-      }
-      controlPanelPosition={controlPanelPosition ?? tool.manifest.defaultControlPanelPosition}
-    />
+        controlPanelPosition={controlPanelPosition ?? tool.manifest.defaultControlPanelPosition}
+      />
+    </MapProvider>
   );
 }

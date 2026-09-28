@@ -1,13 +1,61 @@
 .platform-tool:has(.formatted-download) {
   width: max-content;
-  min-width: 220px;
+  min-width: 280px;
 }
 
 .formatted-download {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 8px;
+  min-height: 132px;
+  overflow: hidden;
+}
+
+.formatted-download__watermark {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  pointer-events: none;
+  user-select: none;
+  color: var(--pt-muted);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-align: center;
+  opacity: 0.45;
+  transform: rotate(-16deg);
+}
+
+.formatted-download__name,
+.formatted-download__file,
+.formatted-download__note,
+.formatted-download__error {
+  position: relative;
+  z-index: 1;
+}
+
+.formatted-download__name {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 240px;
+  font-size: 13px;
+}
+
+.platform-tool .formatted-download__name input {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  color: var(--pt-fg);
+  background: var(--pt-panel);
+  border: 1px solid var(--pt-border);
+  border-radius: 6px;
+  padding: 4px 8px;
 }
 
 .platform-tool .formatted-download__file {

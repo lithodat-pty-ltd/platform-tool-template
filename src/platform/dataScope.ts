@@ -108,7 +108,7 @@ function finish(scope: ResolvedDataScope): ResolvedDataScope {
   return scope;
 }
 
-/** Accepts a plain box, a GeoJSON bbox, or a MapLibre/Mapbox bounds object. */
+/** Accepts a plain box, a GeoJSON bbox, or a Mapbox bounds object. */
 export function normalizeBoundingBox(value: unknown): BoundingBox | null {
   if (value == null) return null;
   const raw = readRawBox(value);

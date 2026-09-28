@@ -5,7 +5,7 @@ export interface MockMap extends PlatformMap {
 }
 
 /**
- * Stand-in for the host MapLibre map. It implements the methods the template
+ * Stand-in for the host Mapbox map. It implements the methods the template
  * calls. The real host passes `mglMap`.
  */
 export function createMockMap(): MockMap {
