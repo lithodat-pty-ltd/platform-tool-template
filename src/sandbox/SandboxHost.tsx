@@ -8,6 +8,7 @@ import { FormattedFileDownload } from "../tool/MyTool";
 import { toolManifest } from "../tool/manifest";
 import { useDemoMap, type DemoMap } from "./demoMap";
 import { makeDemoJwt } from "./demoToken";
+import { authenticateWithPassword } from "./signIn";
 import { MapPane } from "./MapPane";
 import { ToolErrorBoundary } from "./ToolErrorBoundary";
 
@@ -67,6 +68,11 @@ export function SandboxHost({
   const [passToken, setPassToken] = useState(true);
   const [failToken, setFailToken] = useState(false);
   const [accessToken, setAccessToken] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [signingIn, setSigningIn] = useState(false);
+  const [signInMessage, setSignInMessage] = useState<string | null>(null);
+  const [signInFailed, setSignInFailed] = useState(false);
   const [heldLicenses, setHeldLicenses] = useState<Readonly<Record<string, boolean>>>(() =>
     Object.fromEntries(toolManifest.licenses.map((license) => [license.id, true])),
   );
@@ -121,6 +127,23 @@ export function SandboxHost({
     return list;
   }, [heldLicenses, otherLicense]);
   const apiOrigin = apiBaseUrl.trim();
+
+  async function signIn() {
+    setSigningIn(true);
+    setSignInFailed(false);
+    setSignInMessage(null);
+    try {
+      const jwt = await authenticateWithPassword(username, password, apiOrigin);
+      setAccessToken(jwt);
+      setPassword("");
+      setSignInMessage(`Signed in as ${username.trim()}.`);
+    } catch (reason) {
+      setSignInFailed(true);
+      setSignInMessage(reason instanceof Error && reason.message ? reason.message : "Sign-in failed.");
+    } finally {
+      setSigningIn(false);
+    }
+  }
 
   const controlPanelPosition = useMemo(() => readPosition(left, top), [left, top]);
   const callerMount = useMemo(() => callerCode(left, top), [left, top]);
@@ -246,6 +269,38 @@ export function SandboxHost({
             <input type="checkbox" checked={passToken} onChange={(event) => setPassToken(event.target.checked)} />
             Pass a JWT via getToken
           </label>
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              void signIn();
+            }}
+          >
+            <label className="sandbox-host__stack">
+              Username
+              <input
+                type="text"
+                value={username}
+                autoComplete="username"
+                spellCheck={false}
+                onChange={(event) => setUsername(event.target.value)}
+              />
+            </label>
+            <label className="sandbox-host__stack">
+              Password
+              <input
+                type="password"
+                value={password}
+                autoComplete="current-password"
+                onChange={(event) => setPassword(event.target.value)}
+              />
+            </label>
+            <button type="submit" disabled={signingIn}>
+              {signingIn ? "Signing in…" : "Sign in"}
+            </button>
+          </form>
+          {signInMessage ? (
+            <p className={signInFailed ? "sandbox-host__error" : "sandbox-host__hint"}>{signInMessage}</p>
+          ) : null}
           <label className="sandbox-host__stack">
             EarthBank JWT
             <input
@@ -258,8 +313,9 @@ export function SandboxHost({
             />
           </label>
           <p className="sandbox-host__hint">
-            Paste a token to call the API as that user. Leave it blank and this page sends an unsigned sandbox
-            token. The value stays in this page. It is not saved, and it is not part of the published module.
+            Sign in above, or paste a token, to call the API as that user. Leave both blank and this page sends an
+            unsigned sandbox token. The password and token stay in this page. They are not saved, and they are not
+            part of the published module.
           </p>
           <label>
             <input type="checkbox" checked={failToken} onChange={(event) => setFailToken(event.target.checked)} />
