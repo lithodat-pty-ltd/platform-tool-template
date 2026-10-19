@@ -1,5 +1,7 @@
 # Development pattern
 
+Read [README.md](../README.md) first. This file is the detail behind that guide.
+
 Platform tools are npm modules. The module draws its own interface. The host passes a fixed set of parameters and does not take on the tool's behaviour.
 
 That split is already how the platform mounts Swath Profile:
@@ -46,11 +48,11 @@ Every field is optional. A Bookmarks-style tool can ignore the map. An embedded 
 | `onControlPanelPositionChange` | Fired when the user finishes dragging the panel, so the host can store the new position. |
 | `licenses` | What this user is allowed to see. Strings, or `{ id }` / `{ name }` records. |
 | `theme` | Granite brand, surface, and tokens — or a CSS reference. |
-| `searchSpec` | The host search to open. |
+| `searchSpec` | EarthBank query criteria the API already understands (`name.contains`, `id.in`, and the rest). |
 | `ids` | A list of record ids to open. |
 | `boundingBox` | A geographic extent to open. |
 
-Do not add a one-off prop for a single tool. If the tool needs another filter, put it in `searchSpec.filters` or `searchSpec.extra`. If the contract is genuinely missing a parameter, add it once in `src/contract.ts` and describe it here. Do not read platform globals, `localStorage` tokens, or the map DOM to get around a missing prop.
+Do not add a one-off prop for a single tool. Add a criteria key the API already accepts, such as `materialName.equals` or `dataPackageId.equals`, on the query you pass to `listSamples`. If the host already built that query, pass `searchSpec` through unchanged. If the contract is genuinely missing a parameter, add it once in `src/contract.ts` and describe it here. Do not read platform globals, `localStorage` tokens, or the map DOM to get around a missing prop.
 
 The React `key` in the Swath mount is host behaviour:
 
@@ -109,37 +111,51 @@ Hide the controls the user cannot use. Do not render them disabled, and do not a
 
 Declare the ids you check on `toolManifest.licenses` so the host can see them without reading the component.
 
-## Search spec, ids, or a bounding box
+## Ids, search criteria, or a bounding box
 
-These are three ways for the host to say what the tool should open. Send one.
+These are three ways for the host to say which records the tool should open. Send one.
 
 | Input | Shape |
 | --- | --- |
-| `searchSpec` | `{ text, datasetId, filters, sort, limit, offset, extra }` |
-| `ids` | A list of strings or numbers. Blank entries are dropped. Duplicates are dropped. |
+| `ids` | Sample ids, as strings or numbers. Blank entries are dropped. Duplicates are dropped. |
+| `searchSpec` | EarthBank query criteria. See below. |
 | `boundingBox` | `{ west, south, east, north }`, a GeoJSON bbox `[west, south, east, north]`, or a map bounds object with `getWest` / `getSouth` / `getEast` / `getNorth`. |
 
-`west` may be greater than `east` when the box crosses the antimeridian. `south` must not be greater than `north`. Latitudes are within -90..90 and longitudes within -180..180.
+A search on this API is a flat object of criteria keys. The same keys are the query string on `GET /api/core/sample-with-locations` and the other list endpoints. `listSamples` and `listAll` turn the object into that query string.
 
-If the host sends more than one, `resolveDataScope` keeps a single scope:
+```ts
+await earthbank.listSamples({
+  "name.contains": "Du",
+  "dataPackageId.equals": 4532801,
+});
+
+await earthbank.listSamples({ "id.in": [1216651, 1216652] });
+```
+
+| Key | Meaning |
+| --- | --- |
+| `field.equals` | Exact match. `dataPackageId.equals`, `id.equals`. |
+| `field.in` | One of these values. Pass an array. The request repeats the key: `id.in=1&id.in=2`. |
+| `field.contains` | Substring. `name.contains`. |
+| `field.greaterOrEqualThan` / `field.lessOrEqualThan` | Bounds. Location uses `locationCriteria.lat.greaterOrEqualThan` and `locationCriteria.lon.lessOrEqualThan`. |
+| `sort` | JHipster sort, such as `"name,asc"`. |
+| `page`, `size` | Added by `listAll`. Do not invent `limit` or `offset`. |
+
+`hydrateSamplesById` is the other shape. It sends one comma-separated `sampleIds` parameter. Call that method with the id list. Do not build `sampleIds` yourself, and do not put `text`, `datasetId`, `filters`, or `extra` around the criteria.
+
+`west` may be greater than `east` when the box crosses the antimeridian. `south` must not be greater than `north`. Latitudes are within -90..90 and longitudes within -180..180. `findSamplesInBounds` writes the box as `locationCriteria.lat` and `locationCriteria.lon` criteria. It does not split the box at the antimeridian.
+
+If the host sends more than one input, `resolveDataScope` keeps a single scope:
 
 1. A non-empty id list.
-2. Otherwise the search spec.
+2. Otherwise the search criteria.
 3. Otherwise the bounding box.
 
 The inputs that were valid and not selected are listed on `unused`. They are not applied as extra filters. Pass `toolManifest.accepts` into `resolveDataScope` so a tool that cannot use a bounding box ignores one instead of opening it.
 
 A malformed value sets `idsError`, `searchSpecError`, or `boundingBoxError` and does not become the scope. Show that message. Do not throw.
 
-Extra fields on the host's search object are still there at runtime. Narrow them inside the module:
-
-```ts
-interface LithochemSearch extends SearchSpec {
-  sampleType?: string;
-}
-```
-
-Do not ask the host for a new prop per filter.
+When the scope is `search`, pass `scope.searchSpec` straight to `listSamples`. The keys are already the API fields. Do not ask the host for a new prop per filter.
 
 ## Map
 
@@ -229,7 +245,7 @@ const registration = { Component: FormattedFileDownload, manifest: toolManifest 
 />
 ```
 
-`theme.graniteBrand` and `theme.surfaceMode` are the values client001 passes into Granite: `earthbank` and `light`. `controlPanelPosition` is the module default, `{ left: 50, top: 80 }`. The host can override it.
+`currentSearch` is EarthBank query criteria, such as `{ "name.contains": "Du", "dataPackageId.equals": 4532801 }`. It is the same object `listSamples` accepts. `theme.graniteBrand` and `theme.surfaceMode` are the values client001 passes into Granite: `earthbank` and `light`. `controlPanelPosition` is the module default, `{ left: 50, top: 80 }`. The host can override it.
 
 `examples/registry.json` is the list of packages. The platform bundle cannot import an unknown package name out of thin air, so adding a module is still a dependency and one registration. That is the whole integration. Do not copy the tool's components into the platform repository.
 

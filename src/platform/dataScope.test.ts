@@ -8,7 +8,7 @@ import {
 } from "./dataScope";
 
 const box = { west: 115, south: -32, east: 122, north: -26 };
-const search = { text: "komatiite", datasetId: "lithochem.samples" };
+const search = { "name.contains": "komatiite", "dataPackageId.equals": 12 };
 
 describe("resolveDataScope", () => {
   it("is empty when the host sends nothing", () => {

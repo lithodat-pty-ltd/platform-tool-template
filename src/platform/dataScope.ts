@@ -3,7 +3,8 @@ import type { AcceptedScopes, BoundingBox, PlatformToolProps, SearchSpec } from 
 export const INVALID_BOUNDING_BOX =
   "Bounding box must be { west, south, east, north }, [west, south, east, north], or a map bounds object with getWest/getSouth/getEast/getNorth.";
 
-export const INVALID_SEARCH_SPEC = "Search spec must be an object.";
+export const INVALID_SEARCH_SPEC =
+  "Search criteria must be an object of API fields such as name.contains or id.in.";
 export const INVALID_IDS = "Ids must be a list of strings or numbers.";
 
 export type ScopeName = "ids" | "searchSpec" | "boundingBox";
@@ -13,7 +14,7 @@ export interface ResolvedDataScope {
   ids?: readonly string[];
   searchSpec?: SearchSpec;
   boundingBox?: BoundingBox;
-  /** Valid inputs that were sent and not selected. Ids win, then the search spec, then the bounding box. */
+  /** Valid inputs that were sent and not selected. Ids win, then the search criteria, then the bounding box. */
   unused: readonly ScopeName[];
   idsError?: string;
   searchSpecError?: string;
@@ -31,8 +32,8 @@ const ALL_SCOPES: AcceptedScopes = {
 /**
  * Chooses the data the tool should open.
  *
- * Send one of: a search spec, a list of ids, or a bounding box.
- * If more than one arrives, ids are used, otherwise the search spec,
+ * Send one of: a list of ids, EarthBank query criteria, or a bounding box.
+ * If more than one arrives, ids are used, otherwise the criteria,
  * otherwise the bounding box. The others are reported on `unused` and are
  * not applied as extra filters. Read the raw props if a tool truly needs to
  * combine them.
