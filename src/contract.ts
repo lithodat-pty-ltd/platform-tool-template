@@ -10,7 +10,7 @@ import type { GraniteBrand, GraniteMode } from "./platform/granite";
  * - Do not throw when a field is missing. Show an empty state instead.
  * - `licenses` decides which parts of the interface to show. An absent list
  *   means the user has none of those licenses, not all of them.
- * - The data to open is a search spec, a list of ids, or a bounding box.
+ * - The data to open is sample ids, EarthBank query criteria, or a bounding box.
  * - Appearance comes from Granite (`theme.graniteTokens` / brand / surface)
  *   or from a CSS reference (`theme.stylesheetHref` / `theme.className`).
  *
@@ -55,40 +55,21 @@ export type LicenseEntry =
       readonly name?: string;
     };
 
-export type SearchFilterValue =
-  | string
-  | number
-  | boolean
-  | null
-  | SearchFilterValue[]
-  | { readonly [key: string]: SearchFilterValue };
-
-export interface SearchSort {
-  field: string;
-  direction?: "asc" | "desc";
-}
+/** A value EarthBank accepts on one criteria key. Lists become repeated query parameters (`id.in=1&id.in=2`). */
+export type SearchCriteriaValue = string | number | boolean | null | readonly (string | number)[];
 
 /**
- * A host search, passed through so the tool can run or refine it.
- * Extra fields on the host object are still present at runtime. Narrow them
- * with your own interface inside the module rather than adding a host prop.
+ * EarthBank query criteria. This is the search the API already runs.
+ *
+ * Keys are the criteria names on the GET, not a wrapper object.
+ * `name.contains`, `id.in`, `dataPackageId.equals`, and
+ * `locationCriteria.lat.greaterOrEqualThan` are examples.
+ * `listAll` adds `page` and `size`. Sort is the `sort` key, such as `"name,asc"`.
+ *
+ * Pass the object to `listSamples`, `getJson`, or `listAll`.
+ * Do not wrap these keys under `text`, `filters`, or `extra`.
  */
-export interface SearchSpec {
-  /** Free text, as typed in the platform search. */
-  text?: string;
-  /** Dataset, layer, or index the search applies to. */
-  datasetId?: string;
-  /** Structured filters. Values stay JSON-serialisable. */
-  filters?: Readonly<Record<string, SearchFilterValue>>;
-  sort?: readonly SearchSort[];
-  limit?: number;
-  offset?: number;
-  /**
-   * Tool-specific payload. Prefer `filters` for anything the host search
-   * already understands.
-   */
-  extra?: Readonly<Record<string, SearchFilterValue>>;
-}
+export type SearchSpec = Readonly<Record<string, SearchCriteriaValue>>;
 
 /** Geographic extent. West may be greater than east when the box crosses the antimeridian. */
 export interface BoundingBox {
@@ -203,8 +184,9 @@ export interface PlatformToolProps {
   theme?: PlatformTheme;
 
   /**
-   * Structured search the host wants this tool to open.
+   * EarthBank query criteria (`name.contains`, `id.in`, and the rest).
    * Ignored when a non-empty `ids` list is also sent.
+   * Pass the object through to `listSamples`. Do not rebuild it as free text.
    */
   searchSpec?: SearchSpec | null;
 
@@ -215,7 +197,7 @@ export interface PlatformToolProps {
   ids?: readonly (string | number)[] | null;
 
   /**
-   * Geographic extent. Used only when neither ids nor a search spec were sent.
+   * Geographic extent. Used only when neither ids nor search criteria were sent.
    * `west` may be greater than `east` when the box crosses the antimeridian.
    */
   boundingBox?: BoundingBoxInput | null;
