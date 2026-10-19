@@ -88,7 +88,7 @@ Every prop is optional. A missing prop is an empty state, not a crash.
 | `boundingBox` | `{ west, south, east, north }`, `[west, south, east, north]`, or a map bounds object. |
 | `getToken` | Returns the user's JWT. Prefer this. The host can refresh it. |
 | `token` | A JWT string, used only when `getToken` was not passed. |
-| `apiBaseUrl` | API origin. Leave it empty in EarthBank. The module then uses `axios.defaults.baseURL`, which the client has already set. This repo's dev server uses `https://testapp.ausgeochem.org` only when nothing else is set. |
+| `apiBaseUrl` | API origin. Leave it empty in EarthBank. The module then uses `axios.defaults.baseURL`, which the client has already set. Leave it empty here too: `npm run dev` calls the Vite server, and Vite forwards `/api` to `https://testapp.ausgeochem.org`. |
 | `map` | The EarthBank Mapbox map (`mglMap`). `null` means there is no map. The module never receives a Mapbox token. |
 | `onClose` | Tells EarthBank to hide the tool. The module does not remove itself. |
 | `controlPanelPosition` | Where the panel sits. The default is `{ left: 50, top: 80 }` pixels. |

@@ -29,8 +29,10 @@ describe("resolveApiOrigin", () => {
     );
   });
 
-  it("uses testapp only in development when the host has not set an origin", () => {
-    expect(resolveApiOrigin(undefined, { dev: true, axiosBaseURL: "", pageOrigin: "http://localhost:5173" })).toBe(EARTHBANK_ORIGIN);
+  it("uses the page origin in development so the Vite proxy can forward /api", () => {
+    expect(resolveApiOrigin(undefined, { dev: true, axiosBaseURL: "", pageOrigin: "http://localhost:5173" })).toBe(
+      "http://localhost:5173",
+    );
     expect(
       resolveApiOrigin(undefined, {
         dev: true,
@@ -38,6 +40,10 @@ describe("resolveApiOrigin", () => {
         pageOrigin: "http://localhost:5173",
       }),
     ).toBe("https://staging.example");
+  });
+
+  it("uses testapp in development only when there is no page to proxy through", () => {
+    expect(resolveApiOrigin(undefined, { dev: true, axiosBaseURL: "", pageOrigin: "" })).toBe(EARTHBANK_ORIGIN);
   });
 });
 
