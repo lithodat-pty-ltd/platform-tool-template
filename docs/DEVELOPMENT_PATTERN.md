@@ -66,7 +66,7 @@ The module also applies `theme` when the props change. The key still matters: a 
 
 Call `getAccessToken()` from `usePlatformToken` at the moment you make a request. `authorizedFetch` sets `Authorization: Bearer <jwt>` and does not replace a header you already set.
 
-The token is a credential. Do not write it to the console, the DOM, or an error message. With the sandbox JWT field empty, the page sends an unsigned local token. Paste an EarthBank JWT there to call the API as that user. The pasted value stays in the page and is not part of the published module. A real module sends the platform JWT only to the platform API.
+The token is a credential. Do not write it to the console, the DOM, or an error message. With the sandbox sign-in and JWT field empty, the page sends an unsigned local token. Sign in with an EarthBank username and password (`POST /api/authenticate`) or paste a JWT to call the API as that user. The password and token stay in the page and are not part of the published module. A real module sends the platform JWT only to the platform API.
 
 ## Calling the API
 
