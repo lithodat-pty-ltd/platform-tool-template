@@ -66,6 +66,7 @@ export function SandboxHost({
   const [passClose, setPassClose] = useState(true);
   const [passToken, setPassToken] = useState(true);
   const [failToken, setFailToken] = useState(false);
+  const [accessToken, setAccessToken] = useState("");
   const [heldLicenses, setHeldLicenses] = useState<Readonly<Record<string, boolean>>>(() =>
     Object.fromEntries(toolManifest.licenses.map((license) => [license.id, true])),
   );
@@ -102,8 +103,9 @@ export function SandboxHost({
 
   const getToken = useCallback(() => {
     if (failToken) return Promise.reject(new Error("Host refused to issue a token."));
-    return Promise.resolve(makeDemoJwt());
-  }, [failToken]);
+    const pasted = accessToken.trim();
+    return Promise.resolve(pasted || makeDemoJwt());
+  }, [accessToken, failToken]);
 
   const search = useMemo(() => parseSearch(sendSearch, searchText), [sendSearch, searchText]);
   const ids = useMemo(() => (sendIds ? parseIds(idsText) : undefined), [sendIds, idsText]);
@@ -244,6 +246,21 @@ export function SandboxHost({
             <input type="checkbox" checked={passToken} onChange={(event) => setPassToken(event.target.checked)} />
             Pass a JWT via getToken
           </label>
+          <label className="sandbox-host__stack">
+            EarthBank JWT
+            <input
+              type="password"
+              value={accessToken}
+              autoComplete="off"
+              spellCheck={false}
+              placeholder="eyJ…"
+              onChange={(event) => setAccessToken(event.target.value)}
+            />
+          </label>
+          <p className="sandbox-host__hint">
+            Paste a token to call the API as that user. Leave it blank and this page sends an unsigned sandbox
+            token. The value stays in this page. It is not saved, and it is not part of the published module.
+          </p>
           <label>
             <input type="checkbox" checked={failToken} onChange={(event) => setFailToken(event.target.checked)} />
             Next token request fails
