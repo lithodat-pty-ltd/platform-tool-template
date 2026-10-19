@@ -165,8 +165,8 @@ export interface PlatformToolProps {
   /**
    * EarthBank API origin, with no path. Omit it and the module uses the host's
    * `axios.defaults.baseURL` (client001 sets that from `SERVER_API_URL`), then
-   * the page origin. `https://testapp.ausgeochem.org` is used only in this
-   * repository's dev server when neither is set.
+   * the page origin. This repo's dev server also uses the page origin, and Vite
+   * forwards `/api` to `https://testapp.ausgeochem.org`.
    */
   apiBaseUrl?: string;
 

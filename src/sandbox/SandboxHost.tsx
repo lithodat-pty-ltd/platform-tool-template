@@ -233,8 +233,9 @@ export function SandboxHost({
             />
           </label>
           <p className="sandbox-host__hint">
-            Leave this blank while developing to call {EARTHBANK_ORIGIN}. A published module does not use that
-            address. It uses the origin on the host's axios (<code>axios.defaults.baseURL</code>).
+            Leave this blank to call {EARTHBANK_ORIGIN} through the dev server, so the browser does not make a
+            cross-origin request. A published module does not use that address. It uses the origin on the host's
+            axios (<code>axios.defaults.baseURL</code>).
           </p>
         </fieldset>
 
@@ -370,7 +371,7 @@ export function SandboxHost({
             <dt>Map</dt>
             <dd>{toolManifest.requiresMap ? "Required" : "Optional"}</dd>
             <dt>API origin in use</dt>
-            <dd>{apiOrigin || `${EARTHBANK_ORIGIN} (default)`}</dd>
+            <dd>{apiOrigin || `${EARTHBANK_ORIGIN} (via the dev server)`}</dd>
           </dl>
         </fieldset>
 

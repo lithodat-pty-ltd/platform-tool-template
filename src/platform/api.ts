@@ -2,8 +2,9 @@ import axios from "axios";
 import { authorizedFetch, type TokenSource } from "./usePlatformToken";
 
 /**
- * API origin for `npm run dev` only. A published module does not use this.
+ * EarthBank origin the Vite dev server proxies to. A published module does not call this.
  * It uses `apiBaseUrl`, then the host's `axios.defaults.baseURL`, then the page origin.
+ * `npm run dev` calls the page origin, and `vite.config.ts` forwards `/api` here.
  */
 export const EARTHBANK_ORIGIN = "https://testapp.ausgeochem.org";
 
@@ -59,9 +60,10 @@ export async function platformFetch(
 /**
  * Origin the module should call.
  * An explicit `apiBaseUrl` wins. Otherwise the host's axios base URL wins.
- * `https://testapp.ausgeochem.org` is used only in development when neither is set.
- * A published module with an empty axios base URL uses the page origin, which is
- * what axios does when `SERVER_API_URL` is empty.
+ * In development, the page origin is next, so `npm run dev` hits the Vite `/api` proxy
+ * instead of calling testapp from the browser. Testapp is only the fallback when
+ * that dev run has no page. A published module with an empty axios base URL uses
+ * the page origin, which is what axios does when `SERVER_API_URL` is empty.
  */
 export function resolveApiOrigin(
   explicit: string | undefined,
@@ -73,9 +75,10 @@ export function resolveApiOrigin(
   const fromAxios = originFromAxiosBase(options.axiosBaseURL);
   if (fromAxios) return fromAxios;
 
+  const page = options.pageOrigin?.trim().replace(/\/+$/, "");
+  if (options.dev && page) return page;
   if (options.dev) return EARTHBANK_ORIGIN;
 
-  const page = options.pageOrigin?.trim().replace(/\/+$/, "");
   if (page) return page;
 
   throw new PlatformApiError(0, "No API origin. Pass apiBaseUrl or set axios.defaults.baseURL.");

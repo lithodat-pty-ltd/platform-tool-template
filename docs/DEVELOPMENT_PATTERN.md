@@ -39,7 +39,7 @@ Every field is optional. A Bookmarks-style tool can ignore the map. An embedded 
 | --- | --- |
 | `getToken` | Returns a JWT for data access. Prefer this over a raw string so the host can refresh it. Same role as `getSwathProfileAccessToken`. |
 | `token` | A JWT the host already holds. Ignored when `getToken` is set. |
-| `apiBaseUrl` | EarthBank API origin. Omit it and a published module uses the host's `axios.defaults.baseURL`, then the page origin. The dev server uses `https://testapp.ausgeochem.org` only when neither is set. |
+| `apiBaseUrl` | EarthBank API origin. Omit it and a published module uses the host's `axios.defaults.baseURL`, then the page origin. `npm run dev` also uses the page origin. Vite proxies `/api` to `https://testapp.ausgeochem.org`, so the browser does not call testapp directly. |
 | `map` | The caller's Mapbox instance (`mglMap`), also available as `MapContext`. Omit it, or pass `null`, when the tool does not draw on the map. A Mapbox access token is not a module parameter. |
 | `onClose` | Tells the host to hide the tool. The module does not unmount itself. Omit it when the panel is docked and cannot be dismissed. |
 | `controlPanelPosition` | Host override of the module's default position. Numbers are pixels. `right` replaces a default `left`. |
@@ -70,7 +70,7 @@ The token is a credential. Do not write it to the console, the DOM, or an error 
 
 `authorizedFetch` always sends `Authorization: Bearer`. Use it when the call cannot succeed without a JWT.
 
-`createPlatformApi` is the transport. It uses `apiBaseUrl` when the host passed one. Otherwise it uses `axios.defaults.baseURL`, which client001 sets from `SERVER_API_URL`. An empty axios base URL means the page origin, the same as axios. `https://testapp.ausgeochem.org` is only the fallback while running this repository's dev server. `platformFetch` attaches the bearer token when the host provided one, and calls without a header when it did not. Public EarthBank reads answer without a JWT. Private samples still need the host token. A failed response throws `PlatformApiError` with the HTTP status and the problem `detail`. The message stays short and never includes the JWT.
+`createPlatformApi` is the transport. It uses `apiBaseUrl` when the host passed one. Otherwise it uses `axios.defaults.baseURL`, which client001 sets from `SERVER_API_URL`. An empty axios base URL means the page origin, the same as axios. While running this repository's dev server, that page origin is the Vite server, and Vite forwards `/api` to `https://testapp.ausgeochem.org`. `platformFetch` attaches the bearer token when the host provided one, and calls without a header when it did not. Public EarthBank reads answer without a JWT. Private samples still need the host token. A failed response throws `PlatformApiError` with the HTTP status and the problem `detail`. The message stays short and never includes the JWT.
 
 `getJson` and `postJson` send one request. `listAll` repeats `page` and `size` until a short page comes back, and stops early when `X-Total-Count` says every row is already in hand. Long `*.in` lists are split into batches of 50 inside the named calls below.
 
