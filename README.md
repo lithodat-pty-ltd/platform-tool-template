@@ -155,7 +155,7 @@ npm install
 npm run dev
 ```
 
-Open the page. The side column can send ids, criteria, or a bounding box, turn the map and the close button on and off, and switch the Granite brand. To show a real Mapbox map in that column only, set `VITE_MAPBOX_ACCESS_TOKEN` in `.env.local` (see `.env.example`) or paste a key into the token field. The published module never reads that key.
+Open the page. The side column can send ids, criteria, or a bounding box, turn the map and the close button on and off, and switch the Granite brand. Paste an EarthBank JWT into the EarthBank JWT field to call the API as that user. Leave it blank and the page sends an unsigned sandbox token. To show a real Mapbox map in that column only, set `VITE_MAPBOX_ACCESS_TOKEN` in `.env.local` (see `.env.example`) or paste a key into the Mapbox field. The published module never reads that key or the pasted JWT.
 
 ```bash
 npm test
