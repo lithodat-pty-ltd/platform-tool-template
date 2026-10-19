@@ -1,79 +1,161 @@
 # Platform tool template
 
-Template for developing tools for EarthBank. Clone this repository to build a platform tool as an npm module. The module draws its own interface. The platform passes a fixed set of parameters and does not contain the tool's UI.
+This is a starter for one EarthBank tool. Clone it, then tell a coding agent what the tool should do. The agent reads this file, then [docs/DEVELOPMENT_PATTERN.md](docs/DEVELOPMENT_PATTERN.md), then edits the sample tool.
 
-The pattern is the Swath Profile mount: `map`, `getToken`, `onClose`, and `controlPanelPosition`. This template keeps that mount and adds the rest of the parameters every tool should be ready to receive: licenses, a Granite theme or a CSS reference, and the data to open — a search spec, a list of ids, or a bounding box.
+You do not need to know the EarthBank client to start. EarthBank already has the map, the sign-in token, and the sample ids. Your package draws one panel and asks the EarthBank API for data.
 
-Lithoplates, Swath Profile, the gridding tool, Lithochem, Bookmarks, and AOI are already modules of this kind. Read [docs/DEVELOPMENT_PATTERN.md](docs/DEVELOPMENT_PATTERN.md) before editing.
+The panel on `npm run dev` is a demo. The watermark says `demo - replace with your content`. Replace that demo with your tool.
 
-## Make it yours
+## Paste this to the agent before the task
 
-1. Clone this repository. This package is a template, not a library to depend on.
-2. Change `name` in `package.json`. Remove `"private": true` when you publish.
-3. Rename `MyTool`, and set `id`, `displayName`, `requiresMap`, `licenses`, `accepts`, and `defaultControlPanelPosition` in `src/tool/manifest.ts`.
-4. Replace the sample body in `src/tool/MyTool.tsx`. Keep the props. Use `ControlPanel`, `usePlatformToken`, `resolveDataScope`, `createPlatformApi`, and `hasLicense` rather than reimplementing them.
-5. Run `npm run dev`. The page is a stand-in for the EarthBank client. Drive every parameter, including the API origin, before you publish.
-6. Run `npm test`, `npm run typecheck`, and `npm run build`.
-7. On the platform, add the package and a registration entry (`examples/host-mount.tsx`). Do not copy the tool UI into the platform repository.
+```text
+Read README.md, then docs/DEVELOPMENT_PATTERN.md, then src/contract.ts and src/platform/earthbank.ts.
+Change the tool under src/tool/. Leave src/platform/ and src/contract.ts alone unless a prop is genuinely missing.
+The host passes sample ids, EarthBank query criteria, or a bounding box. Ids win.
+Call the API through createEarthBank. A search is criteria such as "name.contains" and "id.in", not a text/filters object.
+Do not log the access token. Do not copy the panel into the EarthBank repository.
+When the code is in place, run npm test, npm run typecheck, and npm run dev.
+```
 
-## Parameters
+## Example task
 
-All of them are optional. Omit what the tool does not need. Do not throw when one is missing.
+Ask the agent:
 
-| Prop | What the host passes |
+> Replace the sample download with an elevation histogram for the sample ids. Use the ids the host passes. Load the samples with `hydrateSamplesById`. Plot `sampleDTO.referenceElevation`. Samples with no elevation go in a separate count. If no ids were passed, show an empty state and do not call the API.
+
+The agent should end up with a tool shaped like this.
+
+`src/tool/manifest.ts` names the tool and says it accepts ids:
+
+```ts
+export const toolManifest: ToolManifest = {
+  id: "elevation-histogram",
+  displayName: "Elevation histogram",
+  summary: "Counts sample elevation for the ids the host passes.",
+  requiresMap: false,
+  defaultControlPanelPosition: { left: 50, top: 80 },
+  licenses: [],
+  accepts: { searchSpec: false, ids: true, boundingBox: false },
+};
+```
+
+`src/tool/MyTool.tsx` loads those ids and draws the chart inside `ControlPanel`:
+
+```tsx
+const scope = resolveDataScope(props, toolManifest.accepts);
+
+if (scope.kind !== "ids" || !scope.ids?.length) {
+  // Show scope.idsError, or "Pass sample ids to plot elevation."
+  // Do not call the API.
+}
+
+const api = createPlatformApi(tokenSourceOf(props), props.apiBaseUrl);
+const earthbank = createEarthBank(api);
+const rows = await earthbank.hydrateSamplesById(scope.ids);
+
+const elevations = rows
+  .map((row) => row.sampleDTO?.referenceElevation)
+  .filter((value): value is number => typeof value === "number");
+```
+
+Group `elevations` into bins and render one bar per bin in the panel. `referenceElevation` is metres on the sample. A missing value is left out of the bars and counted on its own, because hydrate still returns the sample.
+
+Check it in the sandbox. The id list is already filled in. Turn the token on if the samples are private. The chart should change when the id list changes. `npm test` and `npm run typecheck` should pass.
+
+That task does not use a search. The next section is for a tool that does.
+
+## What you may change
+
+| Change this | Leave this |
 | --- | --- |
-| `getToken` | Function that returns a JWT. The host can refresh it. Same role as `getSwathProfileAccessToken`. |
-| `token` | A JWT string, used only when `getToken` is not passed. |
-| `apiBaseUrl` | EarthBank API origin. Omit it and the module uses the host's `axios.defaults.baseURL`, then the page origin. Leave it empty for `npm run dev`: Vite forwards `/api` to `https://testapp.ausgeochem.org`. |
-| `map` | The caller's Mapbox map (`MapProvider` or `mglMap`). Optional. `null` means no map. The module does not take a Mapbox access token. |
-| `onClose` | Asks the host to hide the tool. Optional. The module does not unmount itself. |
-| `controlPanelPosition` | Override of the module default `{ left: 50, top: 80 }`. Numbers are pixels. |
-| `onControlPanelPositionChange` | Last position after the user drags the panel. |
-| `licenses` | License strings, or `{ id }` / `{ name }` records. The module decides what to show. |
-| `theme` | Granite brand (`lithodat`, `earthbank`, `amira`, `dmgeode`), surface (`light`, `dark`, `midnight`), and `graniteTokens` — or a CSS reference (`stylesheetHref`, `className`). |
-| `searchSpec` | Host search: text, dataset, filters, sort, and paging. |
-| `ids` | Record ids to open. |
+| `package.json` name, and `"private": true` when you publish | `src/contract.ts` |
+| `src/tool/MyTool.tsx` and `src/tool/MyTool.css` | `src/platform/**` |
+| `src/tool/manifest.ts` | `src/sandbox/**`, except to try a new host input |
+| New files next to the tool, such as `src/tool/histogram.ts` | The EarthBank client repository |
+
+`src/sandbox` is a stand-in for EarthBank. It is not part of the published package. The floating panel is your module. The side column is the host, passing the same props EarthBank will pass.
+
+Set `id`, `displayName`, `summary`, `requiresMap`, `licenses`, `accepts`, and `defaultControlPanelPosition` in `src/tool/manifest.ts`. `accepts` tells the sandbox which inputs this tool uses. The sample table accepts ids only, so the search box is marked as ignored.
+
+## What the host passes
+
+Every prop is optional. A missing prop is an empty state, not a crash.
+
+| Prop | What it is |
+| --- | --- |
+| `ids` | Sample ids to open. This wins when more than one input is sent. |
+| `searchSpec` | Query criteria the EarthBank API already understands. See below. |
 | `boundingBox` | `{ west, south, east, north }`, `[west, south, east, north]`, or a map bounds object. |
+| `getToken` | Returns the user's JWT. Prefer this. The host can refresh it. |
+| `token` | A JWT string, used only when `getToken` was not passed. |
+| `apiBaseUrl` | API origin. Leave it empty in EarthBank. The module then uses `axios.defaults.baseURL`, which the client has already set. Leave it empty here too: `npm run dev` calls the Vite server, and Vite forwards `/api` to `https://testapp.ausgeochem.org`. |
+| `map` | The EarthBank Mapbox map (`mglMap`). `null` means there is no map. The module never receives a Mapbox token. |
+| `onClose` | Tells EarthBank to hide the tool. The module does not remove itself. |
+| `controlPanelPosition` | Where the panel sits. The default is `{ left: 50, top: 80 }` pixels. |
+| `onControlPanelPositionChange` | The position after the user drops the panel. |
+| `licenses` | What this user is allowed to see. Hide features they do not have. An empty list means they have none of them. |
+| `theme` | `graniteBrand`: `lithodat`, `earthbank`, `amira`, or `dmgeode`. `surfaceMode`: `light`, `dark`, or `midnight` (`midnight` is for Amira). |
 
-Send one data scope. If more than one arrives, ids win, then the search spec, then the bounding box. The others are ignored, not combined.
+`resolveDataScope(props, toolManifest.accepts)` picks one input:
 
-```jsx
-{open && (
-  <FormattedFileDownload
-    key={`${graniteBrand}:${surfaceMode}`}
-    map={mglMap}
-    getToken={getAccessToken}
-    onClose={closeTool}
-    controlPanelPosition={{ left: 50, top: 80 }}
-    licenses={userLicenses}
-    theme={{ graniteBrand: "earthbank", surfaceMode: "light" }}
-    searchSpec={currentSearch}
-    ids={selectedIds}
-    boundingBox={currentExtent}
-  />
-)}
+1. A non-empty id list.
+2. Otherwise the search criteria.
+3. Otherwise the bounding box.
+
+Read `scope.kind`. Show `scope.idsError`, `scope.searchSpecError`, or `scope.boundingBoxError` when one is set.
+
+## How a search is written
+
+EarthBank does not take `{ text, datasetId, filters, sort, limit }`. A search is the same criteria the API puts on the query string. The keys are the fields. The suffix is the comparison.
+
+```ts
+const api = createPlatformApi(tokenSourceOf(props), props.apiBaseUrl);
+const earthbank = createEarthBank(api);
+
+const matches = await earthbank.listSamples({
+  "name.contains": "Du",
+  "dataPackageId.equals": 4532801,
+});
+
+const byId = await earthbank.listSamples({ "id.in": [1216651, 1216652] });
 ```
 
-Pass `graniteTokens` from the Granite module, or pass a CSS reference instead:
+| Criteria | Example |
+| --- | --- |
+| Exact match | `"dataPackageId.equals": 4532801` |
+| One of a list | `"id.in": [1216651, 1216652]` becomes `id.in=1216651&id.in=1216652` |
+| Substring | `"name.contains": "Du"` |
+| A range | `"locationCriteria.lat.greaterOrEqualThan"` and `"locationCriteria.lat.lessOrEqualThan"` |
+| Sort | `"sort": "name,asc"` |
 
-```jsx
-theme={{ stylesheetHref: "/themes/platform.css", className: "granite-theme" }}
-```
+Paging is `page` and `size`. `listAll` adds those and follows every page. Do not send `limit` or `offset`.
 
-The layout CSS variables are `--pt-font`, `--pt-bg`, `--pt-fg`, `--pt-muted`, `--pt-panel`, `--pt-border`, `--pt-accent`, `--pt-accent-fg`, `--pt-danger`, `--pt-shadow`, and `--pt-radius`. Map Granite's names onto those, or set them in the host stylesheet. See the pattern note for which existing tools use the map, close, and which scope.
+When the host has already built this object, pass `scope.searchSpec` through to `listSamples`. Add another criteria key when you need a tighter query. Do not add a new React prop for one filter.
 
-## Develop
+These are the calls most tools start from. The full notes are in [docs/DEVELOPMENT_PATTERN.md](docs/DEVELOPMENT_PATTERN.md).
 
-Requires Node 18 or newer.
+| You have | Call |
+| --- | --- |
+| Sample ids | `earthbank.hydrateSamplesById(scope.ids)` → `GET /api/core/hydrate-samples-by-id?sampleIds=` |
+| Criteria | `earthbank.listSamples(scope.searchSpec)` → `GET /api/core/sample-with-locations` |
+| A map box | `earthbank.findSamplesInBounds(scope.boundingBox)` |
+| Datapoints on those samples | `earthbank.listDataPointsBySampleIds(sampleIds)` → `GET /api/core/data-points?sampleId.in=` |
+| The package name | `earthbank.getDataPackage(packageId)` |
+
+`hydrateSamplesById` wants the id list. It sends one comma-separated `sampleIds` value. One unknown id fails that batch. A technique-specific call, such as fission track, stays in the tool: `api.getJson("/api/fissiontrack/FTDataPoint", { "id.in": ids })`.
+
+Public reads work with no JWT. Private samples need the token from `getToken`. Do not write the token to the console, the page, or an error message.
+
+## Run it
+
+Node 18 or newer.
 
 ```bash
 npm install
 npm run dev
 ```
 
-The page that opens is the host harness. The floating panel is the module (`src/tool/MyTool.tsx`). The side column passes the same parameters the EarthBank client will pass: data scope, token, licenses from the manifest, map, position, Granite brand, and API origin. Use it to prove the tool before you add the package to the client. `src/sandbox` is excluded from the published build.
-
-To open a real Mapbox map in that harness, set `VITE_MAPBOX_ACCESS_TOKEN` in `.env.local` (see `.env.example`) or paste a key into the Mapbox access token field. The demo client uses the key. The module ignores it and reads the map context the caller provides. Leave the key blank to keep the stand-in map.
+Open the page. The side column can send ids, criteria, or a bounding box, turn the map and the close button on and off, and switch the Granite brand. To show a real Mapbox map in that column only, set `VITE_MAPBOX_ACCESS_TOKEN` in `.env.local` (see `.env.example`) or paste a key into the token field. The published module never reads that key.
 
 ```bash
 npm test
@@ -81,14 +163,36 @@ npm run typecheck
 npm run build
 ```
 
-The sandbox JWT is unsigned and never leaves the browser. Do not log a real access token.
+## Put the tool in EarthBank
 
-## Publish
+Change `name` in `package.json` and remove `"private": true`. EarthBank installs the package and mounts it. It does not copy your panel into the client.
 
-The build emits an ES module and injects the panel CSS on import. `react` and `react-dom` are peer dependencies. Import the component:
-
-```ts
-import { FormattedFileDownload, toolManifest } from "platform-tool-template";
+```bash
+npm install github:lithodat-pty-ltd/your-tool
 ```
 
-Registration on the host is `examples/host-mount.tsx` and `examples/registry.json`.
+```tsx
+import { ElevationHistogram, toolManifest } from "your-tool";
+
+{open && (
+  <ElevationHistogram
+    getToken={getAccessToken}
+    onClose={closeTool}
+    controlPanelPosition={{ left: 50, top: 80 }}
+    theme={{ graniteBrand: "earthbank", surfaceMode: "light" }}
+    licenses={userLicenses}
+    ids={selectedIds}
+    map={mglMap}
+  />
+)}
+```
+
+Pass the ids the user has selected. Leave `apiBaseUrl` unset so the module uses the API origin EarthBank already gave axios. The longer mount notes are in `examples/host-mount.tsx` and [docs/DEVELOPMENT_PATTERN.md](docs/DEVELOPMENT_PATTERN.md). How approved tools appear under Tools → 3rd party is in [docs/MODULE_MANAGER.md](docs/MODULE_MANAGER.md).
+
+## Rules
+
+- The module draws its own panel. EarthBank supplies the props in `PlatformToolProps`.
+- Do not throw when a prop is missing. Show an empty state.
+- Do not treat a missing license list as permission to show everything.
+- Do not log the JWT or a Mapbox token.
+- Do not import EarthBank source. The props and `createEarthBank` are the API.

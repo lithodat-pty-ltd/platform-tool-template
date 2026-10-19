@@ -40,10 +40,8 @@ function positionLiteral(value: string): string {
 }
 
 const DEFAULT_SEARCH = `{
-  "text": "komatiite",
-  "datasetId": "lithochem.samples",
-  "filters": { "element": "Ni", "minPpm": 1000 },
-  "limit": 200
+  "name.contains": "Du",
+  "dataPackageId.equals": 4532801
 }`;
 
 /**
@@ -173,12 +171,13 @@ export function SandboxHost({
         <fieldset>
           <legend>Data scope</legend>
           <p className="sandbox-host__hint">
-            Send one. If you send more than one, the module uses ids, then the search spec, then the bounding box.
+            Send one. If you send more than one, the module uses ids, then the search criteria, then the bounding box.
+            Criteria are API fields such as <code>name.contains</code> and <code>id.in</code>.
             Resolved scope: <strong>{resolved.kind}</strong>.
           </p>
           <label>
             <input type="checkbox" checked={sendSearch} onChange={(event) => setSendSearch(event.target.checked)} />
-            Search spec{toolManifest.accepts.searchSpec ? "" : " (this module ignores it)"}
+            Search criteria{toolManifest.accepts.searchSpec ? "" : " (this module ignores it)"}
           </label>
           {sendSearch ? (
             <>
@@ -466,7 +465,7 @@ function parseSearch(send: boolean, text: string): { spec: SearchSpec | undefine
   try {
     const parsed: unknown = JSON.parse(text);
     if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-      return { spec: undefined, error: "Search spec must be a JSON object." };
+      return { spec: undefined, error: "Search criteria must be a JSON object, for example { \"name.contains\": \"Du\" }." };
     }
     return { spec: parsed as SearchSpec, error: null };
   } catch {
